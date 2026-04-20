@@ -2,6 +2,15 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+const planetTextureAssets = Object.entries(
+  import.meta.glob("../../03_planet/*.{jpg,jpeg,png,webp}", { eager: true, import: "default" })
+).reduce((acc, [filePath, assetUrl]) => {
+  const fileName = filePath.split("/").pop() ?? "";
+  const base = fileName.replace(/\.[^.]+$/, "").toLowerCase();
+  acc[base] = assetUrl;
+  return acc;
+}, {});
+
 const ECCENTRICITY = {
   Mercury: 0.2056,
   Venus: 0.0068,
@@ -213,6 +222,27 @@ function makeMoonTexture() {
   return tex;
 }
 
+function getTextureCandidates(bodyName) {
+  const key = bodyName.toLowerCase();
+  if (key === "earth") return ["earth", "earth_colour_d", "earth_colour_c", "earth_colour_b", "earth_colour"];
+  if (key === "moon") return ["moon1", "moon_colour", "moon"];
+  return [key];
+}
+
+function loadBodyTexture(loader, bodyName) {
+  const candidates = getTextureCandidates(bodyName);
+  for (const candidate of candidates) {
+    const url = planetTextureAssets[candidate];
+    if (!url) continue;
+    const tex = loader.load(url);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    return tex;
+  }
+  return null;
+}
+
 export default function SolarSystemThree({
   planets,
   scaleMode = "real",
@@ -276,7 +306,8 @@ export default function SolarSystemThree({
     rimLight.position.set(-140, 60, -180);
     scene.add(rimLight);
 
-    const sunTexture = makeSunTexture();
+    const textureLoader = new THREE.TextureLoader();
+    const sunTexture = loadBodyTexture(textureLoader, "sun") ?? makeSunTexture();
     const sun = new THREE.Mesh(
       new THREE.SphereGeometry(15, 64, 64),
       new THREE.MeshStandardMaterial({
@@ -345,7 +376,10 @@ export default function SolarSystemThree({
       const orbitRadius = isPresentation
         ? 96 + Math.log10(1 + au) * 440
         : 145 + Math.log10(1 + au) * 620;
-      const tex = makePlanetTexture(planet.name, planet.unlocked);
+      const tex =
+        (planet.name === "Jupiter" ? loadBodyTexture(textureLoader, "jupiter") : null) ??
+        (isPresentation && planet.unlocked ? loadBodyTexture(textureLoader, planet.name) : null) ??
+        makePlanetTexture(planet.name, planet.unlocked);
       const materialProfile = {
         Mercury: { roughness: 0.9, metalness: 0.04, emissive: "#293647", emissiveIntensity: 0.36, color: "#fff7ed" },
         Venus: { roughness: 0.84, metalness: 0.03, emissive: "#5f3e1f", emissiveIntensity: 0.4, color: "#fff0cc" },
@@ -447,7 +481,7 @@ export default function SolarSystemThree({
     });
     planetEntriesRef.current = planetEntries;
     const earthEntry = planetEntries.find((entry) => entry.planet.name === "Earth");
-    const moonTexture = makeMoonTexture();
+    const moonTexture = (isPresentation ? loadBodyTexture(textureLoader, "moon") : null) ?? makeMoonTexture();
     const moonSizeMultiplier = isPresentation ? PRESENTATION_SIZE_MULTIPLIER.Earth : 1;
     const moonRadiusScene = MOON_RADIUS_KM * kmToScene * moonSizeMultiplier;
     const moonOrbitRadiusScene = EARTH_MOON_DISTANCE_KM * kmToScene * (isPresentation ? 1.22 : 1);
@@ -508,9 +542,10 @@ export default function SolarSystemThree({
 
     let frameId = 0;
     const startMs = Date.now();
+    const timeScale = 0.5;
     const animate = () => {
       const elapsedSec = (Date.now() - startMs) / 1000;
-      const earthYears = elapsedSec / 30;
+      const earthYears = (elapsedSec / 30) * timeScale;
       stars.rotation.y = 0;
       stars.rotation.x = 0;
 
@@ -528,7 +563,7 @@ export default function SolarSystemThree({
         const z = b * Math.sin(angle);
         const y = z * 0.08;
         mesh.position.set(x, y, z);
-        mesh.rotation.y += 0.009;
+        mesh.rotation.y += 0.009 * timeScale;
         const toSun = new THREE.Vector3(-x, -y, -z).normalize();
         const lit = Math.max(0, toSun.dot(new THREE.Vector3(0, 0, 1)));
         if (planet.unlocked) {
@@ -559,7 +594,7 @@ export default function SolarSystemThree({
         const mz = earthEntry.mesh.position.z + Math.sin(moonAngle) * moonOrbitRadiusScene;
         const my = earthEntry.mesh.position.y + Math.sin(moonAngle * 1.35) * (moonOrbitRadiusScene * 0.08);
         moon.position.set(mx, my, mz);
-        moon.rotation.y += 0.011;
+        moon.rotation.y += 0.011 * timeScale;
         if (moonLabel) {
           moonLabel.position.set(mx, my + moonRadiusScene + 2.2, mz);
           moonLabel.material.opacity = 1;

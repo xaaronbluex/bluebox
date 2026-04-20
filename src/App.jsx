@@ -3,6 +3,9 @@ import { createColorDatabase, createWebSafeRectGrid, manualColorMap } from "./da
 import { createElementDatabase } from "./data/elements";
 import { createPlanetDatabase } from "./data/planets";
 import SolarSystemThree from "./components/SolarSystemThree";
+import EarthMoonThree from "./components/EarthMoonThree";
+import SunThree from "./components/SunThree";
+import PlanetSoloThree from "./components/PlanetSoloThree";
 import { drawFromPool } from "./lib/gacha";
 
 const tabs = [
@@ -29,6 +32,21 @@ const machineSlots = [
   { id: "hk", title: "Hong Kong 3D", image: "/hk_01.png" },
   { id: "heart", title: "心經", image: "/heart_01.png" },
 ];
+
+/** Sun-ward order: Mercury, Venus, Earth (full scene), then outer planets. */
+const planetViewOrder = [
+  { id: "mercury", label: "Mercury" },
+  { id: "venus", label: "Venus" },
+  { id: "earth", label: "Earth" },
+  { id: "mars", label: "Mars" },
+  { id: "jupiter", label: "Jupiter" },
+  { id: "saturn", label: "Saturn" },
+  { id: "uranus", label: "Uranus" },
+  { id: "neptune", label: "Neptune" },
+  { id: "pluto", label: "Pluto" },
+];
+
+const soloPlanetIds = planetViewOrder.filter((p) => p.id !== "earth").map((p) => p.id);
 
 const rarityColor = {
   EXR: "#ff5ad1",
@@ -585,7 +603,7 @@ export default function App() {
               <div>
                 <p className="mt-1 text-sm text-sky-100/80">Unlocked {planetUnlocked} / {planets.length}</p>
               </div>
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                 <button
                   onClick={() => setPlanetScaleMode("real")}
                   className={`rounded-full px-4 py-1 text-xs font-bold transition ${
@@ -594,31 +612,57 @@ export default function App() {
                       : "bg-slate-900/70 text-slate-200 hover:bg-slate-700/80"
                   }`}
                 >
-                  Real Scale
+                  Solar System
                 </button>
                 <button
-                  onClick={() => setPlanetScaleMode("presentation")}
+                  onClick={() => setPlanetScaleMode("sun")}
                   className={`rounded-full px-4 py-1 text-xs font-bold transition ${
-                    planetScaleMode === "presentation"
-                      ? "bg-fuchsia-300 text-slate-950 shadow-[0_0_16px_rgba(244,114,182,0.55)]"
+                    planetScaleMode === "sun"
+                      ? "bg-amber-300 text-slate-950 shadow-[0_0_16px_rgba(251,191,36,0.55)]"
                       : "bg-slate-900/70 text-slate-200 hover:bg-slate-700/80"
                   }`}
                 >
-                  Presentation
+                  Sun
                 </button>
+                {planetViewOrder.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPlanetScaleMode(p.id)}
+                    className={`rounded-full px-4 py-1 text-xs font-bold transition ${
+                      planetScaleMode === p.id
+                        ? p.id === "earth"
+                          ? "bg-emerald-300 text-slate-950 shadow-[0_0_16px_rgba(74,222,128,0.55)]"
+                          : "bg-violet-300 text-slate-950 shadow-[0_0_16px_rgba(196,181,253,0.5)]"
+                        : "bg-slate-900/70 text-slate-200 hover:bg-slate-700/80"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="relative z-10 mx-auto h-[calc(100vh-320px)] min-h-[560px] w-full max-w-[1650px]">
-              <SolarSystemThree
-                planets={planets}
-                scaleMode={planetScaleMode}
-                onHoverPlanet={handlePlanetHover}
-                onLeavePlanet={handlePlanetLeave}
-              />
+              {planetScaleMode === "earth" ? (
+                <EarthMoonThree />
+              ) : planetScaleMode === "sun" ? (
+                <SunThree />
+              ) : soloPlanetIds.includes(planetScaleMode) ? (
+                <PlanetSoloThree planetId={planetScaleMode} />
+              ) : (
+                <SolarSystemThree
+                  planets={planets}
+                  scaleMode={planetScaleMode}
+                  onHoverPlanet={handlePlanetHover}
+                  onLeavePlanet={handlePlanetLeave}
+                />
+              )}
             </div>
 
             <div className="absolute bottom-6 right-3 z-20 max-w-[230px] rounded-md bg-black/25 px-2 py-1 text-right text-[10px] leading-tight text-slate-100/90 sm:bottom-8 sm:right-6">
+              <p>Spin ratio: 1 minute = 5 Earth days</p>
+              <p className="text-slate-300/90">轉速比例：1 分鐘 = 5 地球日</p>
               <p>GMT {spaceNow.toUTCString().replace("GMT", "").trim()}</p>
               <p className="text-slate-300/90">格林威治時間</p>
               <p>Universe age: 13.8 billion years</p>

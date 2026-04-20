@@ -10,3 +10,6 @@ yarn-error.log*
 .env.*
 .idea/
 .vscode/
+
+# ~194 MB; exceeds GitHub limit — add locally if you use the STL Earth mesh
+public/Earth.stl
