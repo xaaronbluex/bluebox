@@ -2,35 +2,75 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createColorDatabase, createWebSafeRectGrid, manualColorMap } from "./data/colors";
 import { createElementDatabase } from "./data/elements";
 import { createPlanetDatabase } from "./data/planets";
+import { createSutraDatabase, HEART_SUTRA_PATTERN_LINES } from "./data/sutra";
 import SolarSystemThree from "./components/SolarSystemThree";
 import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
+import ModelHoverPreview from "./components/ModelHoverPreview";
 import { drawFromPool } from "./lib/gacha";
+
+const itemAssetEntries = Object.entries(
+  import.meta.glob("../3d/*.{glb,gltf,obj,fbx,stl,dae,3ds,blend,png,jpg,jpeg,webp}", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  })
+);
+
+function createInitialItemInventory() {
+  const grouped = new Map();
+  itemAssetEntries.forEach(([filePath, assetUrl]) => {
+    const fileName = filePath.split("/").pop() ?? "";
+    const dot = fileName.lastIndexOf(".");
+    if (dot <= 0) return;
+    const base = fileName.slice(0, dot);
+    const ext = fileName.slice(dot + 1).toLowerCase();
+    if (!grouped.has(base)) grouped.set(base, { modelName: "", modelUrl: "", imageUrl: "" });
+    const entry = grouped.get(base);
+    if (!entry) return;
+    if (["glb", "gltf", "obj", "fbx", "stl", "dae", "3ds", "blend"].includes(ext)) {
+      entry.modelName = fileName;
+      entry.modelUrl = assetUrl;
+    } else if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+      entry.imageUrl = assetUrl;
+    }
+  });
+
+  const seeded = Array.from(grouped.values());
+  return Array.from({ length: 100 }, (_, idx) => ({
+    id: idx + 1,
+    modelName: seeded[idx]?.modelName ?? "",
+    modelUrl: seeded[idx]?.modelUrl ?? "",
+    imageUrl: seeded[idx]?.imageUrl ?? "",
+  }));
+}
 
 const tabs = [
   { id: "machines", label: "Machines" },
   { id: "colour", label: "Colour" },
   { id: "chemical", label: "Elements" },
   { id: "planets", label: "Planets" },
-  { id: "hk", label: "HK 3D Buildings" },
   { id: "heart", label: "心經" },
+  { id: "items", label: "Items" },
   { id: "plants", label: "Plants" },
   { id: "mimic", label: "Mimic Insects" },
   { id: "ocean", label: "Ocean Creatures" },
   { id: "music", label: "Music Instrument" },
+  { id: "hk", label: "HK 3D Buildings" },
 ];
 
 const machineSlots = [
   { id: "colour", title: "Colour", image: "/colour_01.png" },
   { id: "chemical", title: "Elements", image: "/chem_01.png" },
   { id: "planets", title: "Planets", image: "/planets_01.png" },
+  { id: "items", title: "Items", image: "/items_01.png" },
   { id: "plants", title: "Plants", image: "/plants_01.png" },
   { id: "mimic", title: "Mimic Insects", image: "/mimic_01.png" },
   { id: "ocean", title: "Ocean Creatures", image: "/ocean_01.png" },
   { id: "music", title: "Music Instrument", image: "/music_01.png" },
-  { id: "hk", title: "Hong Kong 3D", image: "/hk_01.png" },
   { id: "heart", title: "心經", image: "/heart_01.png" },
+  { id: "hk", title: "Hong Kong 3D", image: "/hk_01.png" },
 ];
 
 /** Sun-ward order: Mercury, Venus, Earth (full scene), then outer planets. */
@@ -47,7 +87,7 @@ const planetViewOrder = [
 ];
 
 const soloPlanetIds = planetViewOrder.filter((p) => p.id !== "earth").map((p) => p.id);
-
+const sutraSsrChars = new Set(["色", "空", "佛", "般", "若"]);
 const rarityColor = {
   EXR: "#ff5ad1",
   UR: "#ffd166",
@@ -145,6 +185,10 @@ export default function App() {
   const [colors, setColors] = useState(() => createColorDatabase());
   const [elements, setElements] = useState(() => createElementDatabase());
   const [planets, setPlanets] = useState(() => createPlanetDatabase());
+  const [sutraCharacters, setSutraCharacters] = useState(() => createSutraDatabase());
+  const [itemInventory, setItemInventory] = useState(() => createInitialItemInventory());
+  const [itemPreview, setItemPreview] = useState(null);
+  const previewHideTimerRef = useRef(null);
   const [spaceNow, setSpaceNow] = useState(() => new Date());
   const [lastDrop, setLastDrop] = useState(null);
   const donutCanvasRef = useRef(null);
@@ -158,6 +202,31 @@ export default function App() {
   const colorUnlocked = useMemo(() => colors.filter((c) => c.unlocked).length, [colors]);
   const elementUnlocked = useMemo(() => elements.filter((e) => e.unlocked).length, [elements]);
   const planetUnlocked = useMemo(() => planets.filter((p) => p.unlocked).length, [planets]);
+  const sutraUnlocked = useMemo(() => sutraCharacters.filter((c) => c.unlocked).length, [sutraCharacters]);
+  const sutraColumns = useMemo(() => {
+    let charCursor = 0;
+    return HEART_SUTRA_PATTERN_LINES.map((line, lineIndex) =>
+      Array.from(line).map((token, tokenIndex) => {
+        const isSeparator = token === "。" || token === "　";
+        if (isSeparator) {
+          return {
+            id: `sep-${lineIndex}-${tokenIndex}`,
+            staticToken: true,
+            unlocked: true,
+            character: token,
+          };
+        }
+        const sutraChar = sutraCharacters[charCursor];
+        charCursor += 1;
+        return {
+          id: sutraChar?.id ?? `missing-${lineIndex}-${tokenIndex}`,
+          staticToken: false,
+          unlocked: sutraChar?.unlocked ?? false,
+          character: sutraChar?.character ?? token,
+        };
+      })
+    );
+  }, [sutraCharacters]);
   const webSafeRectGrid = useMemo(() => createWebSafeRectGrid(), []);
 
   const handlePlanetHover = useCallback((planet, x, y) => {
@@ -198,6 +267,21 @@ export default function App() {
     setLastDrop({ mode: "planets", name: item.name, rarity: item.rarity, duplicate: wasDuplicate });
   }
 
+  function rollSutraGacha() {
+    const pickedIndex = Math.floor(Math.random() * sutraCharacters.length);
+    const item = sutraCharacters[pickedIndex];
+    if (!item) return;
+    const wasDuplicate = item.unlocked;
+    const isSsr = sutraSsrChars.has(item.character);
+    setSutraCharacters((prev) => prev.map((c, idx) => (idx === pickedIndex ? { ...c, unlocked: true } : c)));
+    setLastDrop({
+      mode: "heart",
+      name: `抽中嘅字：${item.character}${isSsr ? "  [SSR]" : ""}`,
+      rarity: isSsr ? "UR" : "N",
+      duplicate: wasDuplicate,
+    });
+  }
+
   useEffect(() => {
     if (!lastDrop) return undefined;
     setDropFading(false);
@@ -221,13 +305,75 @@ export default function App() {
     setColors((prev) => prev.map((item) => ({ ...item, unlocked: true })));
     setElements((prev) => prev.map((item) => ({ ...item, unlocked: true })));
     setPlanets((prev) => prev.map((item) => ({ ...item, unlocked: true })));
+    setSutraCharacters((prev) => prev.map((item) => ({ ...item, unlocked: true })));
   }
 
   function resetAll() {
     setColors((prev) => prev.map((item) => ({ ...item, unlocked: false })));
     setElements((prev) => prev.map((item) => ({ ...item, unlocked: false })));
     setPlanets((prev) => prev.map((item) => ({ ...item, unlocked: false })));
+    setSutraCharacters((prev) => prev.map((item) => ({ ...item, unlocked: false })));
   }
+
+  function handleItemUpload(slotIndex, file, kind = "model") {
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setItemInventory((prev) =>
+      prev.map((slot, idx) =>
+        idx === slotIndex
+          ? {
+              ...slot,
+              modelName: kind === "model" ? file.name : slot.modelName,
+              modelUrl: kind === "model" ? objectUrl : slot.modelUrl,
+              imageUrl: kind === "image" ? objectUrl : slot.imageUrl,
+            }
+          : slot
+      )
+    );
+  }
+
+  function clearItemPreviewHideTimer() {
+    if (previewHideTimerRef.current) {
+      clearTimeout(previewHideTimerRef.current);
+      previewHideTimerRef.current = null;
+    }
+  }
+
+  function showItemPreview(slot, event) {
+    if (!slot.modelUrl) {
+      setItemPreview(null);
+      return;
+    }
+    clearItemPreviewHideTimer();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const popupWidth = 320;
+    const popupHeight = 300;
+    let left = rect.right + 12;
+    let top = rect.top - 18;
+    if (left + popupWidth > window.innerWidth - 12) {
+      left = rect.left - popupWidth - 12;
+    }
+    if (top + popupHeight > window.innerHeight - 12) {
+      top = window.innerHeight - popupHeight - 12;
+    }
+    if (top < 12) top = 12;
+    setItemPreview({ slot, left, top });
+  }
+
+  function hideItemPreviewSoon() {
+    clearItemPreviewHideTimer();
+    previewHideTimerRef.current = setTimeout(() => {
+      setItemPreview(null);
+      previewHideTimerRef.current = null;
+    }, 120);
+  }
+
+  useEffect(
+    () => () => {
+      clearItemPreviewHideTimer();
+    },
+    []
+  );
 
   useEffect(() => {
     if (tab !== "chemical") {
@@ -673,8 +819,119 @@ export default function App() {
           </section>
         )}
 
+        {tab === "heart" && (
+          <section className="rounded-2xl bg-transparent p-4 sm:p-6">
+            <div className="relative rounded-xl bg-transparent px-3 pb-4 pt-24 sm:px-4 sm:pt-28">
+              <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 text-center">
+                <p
+                  className="text-lg tracking-[0.3em] text-white/90"
+                  style={{ fontFamily: '"DFKai-SB","BiauKai","KaiTi","STKaiti","Songti TC","PMingLiU","Noto Serif TC",serif' }}
+                >
+                  般若波羅蜜多心經
+                </p>
+                <button
+                  onClick={rollSutraGacha}
+                  className="pointer-events-auto mt-2 rounded-md bg-[linear-gradient(180deg,#d34b2e,#a72f1f)] px-4 py-2 font-serif text-base tracking-[0.2em] text-amber-100 shadow-[0_4px_12px_rgba(110,25,10,0.35)] transition hover:brightness-110"
+                  title="Draw one Heart Sutra character"
+                >
+                  抽 字
+                </button>
+                <p className="mt-1 text-sm text-white/70">Unlocked {sutraUnlocked} / {sutraCharacters.length}</p>
+              </div>
+
+              <div
+                className="flex w-full flex-row-reverse justify-between gap-1"
+                style={{ fontFamily: '"DFKai-SB","BiauKai","KaiTi","STKaiti","Songti TC","PMingLiU","Noto Serif TC",serif' }}
+              >
+                {sutraColumns.map((column, colIdx) => (
+                  <div
+                    key={`col-${colIdx}`}
+                    className="flex w-8 flex-col items-center gap-1"
+                  >
+                    {column.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`flex items-center justify-center bg-transparent px-[1px] text-2xl leading-none transition duration-150 ${
+                          item.staticToken
+                            ? "text-white/80"
+                            : item.unlocked
+                              ? sutraSsrChars.has(item.character)
+                                ? "cursor-pointer text-[#FFD700] [text-shadow:0_0_10px_rgba(255,215,0,0.9),0_0_20px_rgba(255,215,0,0.6)] hover:scale-125 hover:[text-shadow:0_0_14px_rgba(255,215,0,1),0_0_26px_rgba(255,215,0,0.75)]"
+                                : "cursor-pointer text-white [text-shadow:0_0_8px_rgba(255,255,255,0.45)] hover:scale-125 hover:text-cyan-200 hover:[text-shadow:0_0_14px_rgba(165,243,252,0.85)]"
+                              : "text-white/28 hover:text-white/45"
+                        }`}
+                      >
+                        {item.staticToken ? item.character : item.unlocked ? item.character : "·"}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {tab === "items" && (
+          <section className="rounded-xl border border-cyan-900/40 bg-slate-950/30 p-4">
+            <div className="mb-3 text-center">
+              <h2 className="text-2xl font-bold text-cyan-100">Items 3D Inventory</h2>
+              <p className="mt-1 text-sm text-cyan-200/80">100 slots (10 x 10). Upload a 3D model and PNG cover for each slot.</p>
+            </div>
+            <div className="grid grid-cols-10 gap-2">
+              {itemInventory.map((slot, idx) => (
+                <div
+                  key={slot.id}
+                  className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-md border border-cyan-700/40 bg-slate-900/70 p-1 text-center transition hover:border-cyan-300/80"
+                  title={slot.modelName || `Slot ${slot.id}`}
+                  onMouseEnter={(e) => showItemPreview(slot, e)}
+                  onMouseLeave={hideItemPreviewSoon}
+                >
+                  {slot.imageUrl ? (
+                    <img src={slot.imageUrl} alt={`Slot ${slot.id}`} className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] text-cyan-200/45">EMPTY</div>
+                  )}
+                  <div className="pointer-events-none absolute left-1 top-1 rounded bg-black/55 px-1 text-[9px] text-cyan-100/90">
+                    {slot.id}
+                  </div>
+                  <div className="absolute bottom-1 left-1 right-1 z-20 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                    <label className="flex-1 cursor-pointer rounded bg-cyan-700/90 px-1 py-[2px] text-[9px] font-bold text-white">
+                      3D
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".glb,.gltf,.obj,.fbx,.stl,.dae,.3ds,.blend"
+                        onChange={(e) => handleItemUpload(idx, e.target.files?.[0], "model")}
+                      />
+                    </label>
+                    <label className="flex-1 cursor-pointer rounded bg-fuchsia-700/90 px-1 py-[2px] text-[9px] font-bold text-white">
+                      PNG
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".png,image/png,image/jpeg,image/webp"
+                        onChange={(e) => handleItemUpload(idx, e.target.files?.[0], "image")}
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {itemPreview?.slot?.modelUrl ? (
+              <div
+                className="fixed z-[70] w-[320px]"
+                style={{ left: `${itemPreview.left}px`, top: `${itemPreview.top}px` }}
+                onMouseEnter={clearItemPreviewHideTimer}
+                onMouseLeave={hideItemPreviewSoon}
+              >
+                <ModelHoverPreview modelUrl={itemPreview.slot.modelUrl} fileName={itemPreview.slot.modelName} />
+              </div>
+            ) : null}
+          </section>
+        )}
+
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">

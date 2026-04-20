@@ -61,6 +61,8 @@ const PRESENTATION_SIZE_MULTIPLIER = {
   Neptune: 2.2,
   Pluto: 4.8,
 };
+const REAL_SCALE_PLANET_SIZE_MULTIPLIER = 3;
+const REAL_SCALE_SUN_SIZE_MULTIPLIER = 3;
 
 function makeLabelSprite(text, options = {}) {
   const { width = 512, height = 128, font = "italic 48px Georgia", scale = [24, 6, 1] } = options;
@@ -308,8 +310,9 @@ export default function SolarSystemThree({
 
     const textureLoader = new THREE.TextureLoader();
     const sunTexture = loadBodyTexture(textureLoader, "sun") ?? makeSunTexture();
+    const sunRadiusScene = isPresentation ? 15 : 15 * REAL_SCALE_SUN_SIZE_MULTIPLIER;
     const sun = new THREE.Mesh(
-      new THREE.SphereGeometry(15, 64, 64),
+      new THREE.SphereGeometry(sunRadiusScene, 64, 64),
       new THREE.MeshStandardMaterial({
         color: "#ffc35e",
         map: sunTexture,
@@ -329,7 +332,7 @@ export default function SolarSystemThree({
       scale: [34, 9, 1],
     });
     if (sunLabel) {
-      sunLabel.position.set(0, 24, 0);
+      sunLabel.position.set(0, sunRadiusScene + 9, 0);
       sunLabel.material.depthTest = false;
       sunLabel.renderOrder = 3;
       scene.add(sunLabel);
@@ -371,7 +374,7 @@ export default function SolarSystemThree({
       const baseRadius = planet.radiusKm * kmToScene;
       const radius = isPresentation
         ? baseRadius * (PRESENTATION_SIZE_MULTIPLIER[planet.name] ?? 2.4)
-        : baseRadius;
+        : baseRadius * REAL_SCALE_PLANET_SIZE_MULTIPLIER;
       const au = SEMI_MAJOR_AU[planet.name] ?? 1 + idx;
       const orbitRadius = isPresentation
         ? 96 + Math.log10(1 + au) * 440
