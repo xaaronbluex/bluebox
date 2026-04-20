@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Earth's Archive | Core v3.0</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
+    <link rel="stylesheet" href="css/base.css">      
+    <link rel="stylesheet" href="css/nav.css">       
+    <link rel="stylesheet" href="css/diorama.css">   
+    <link rel="stylesheet" href="css/machines.css">  
+    <link rel="stylesheet" href="css/stories.css">   
+</head>
+
+
+<body>
+
+    <div class="dev-panel">
+        <button onclick="unlockAllHack()" class="btn-all-on">ALL ON</button>
+        <button onclick="resetAllHack()" class="btn-reset">RESET</button>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <header class="bunker-header">
+        <h1>EARTH'S ARCHIVE</h1>
+        <p class="subtitle">Gacha Diorama</p>
+    </header>
+
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" onclick="openTab('tab-colour')">COLOUR</button>
+        <button class="tab-btn" onclick="openTab('tab-chemical')">CHEMICAL</button>
+        <button class="tab-btn" onclick="openTab('tab-plants')">PLANTS</button>
+        <button class="tab-btn" onclick="openTab('tab-mimic')">MIMIC</button>
+        <button class="tab-btn" onclick="openTab('tab-planets')">PLANETS</button>
+        <button class="tab-btn" onclick="openTab('tab-ocean')">OCEAN</button>
+        <button class="tab-btn" onclick="openTab('tab-music')">MUSIC</button>
+        <button class="tab-btn" onclick="openTab('tab-anatomy')">ANATOMY</button>
+        <button class="tab-btn" onclick="openTab('tab-hk')">HK 3D</button>
+    </nav>
+
+
+    <main>
+        
+        <div id="tab-colour" class="tab-content" style="display: flex;">
+            <div class="split-layout">
+                <div class="machine-side">
+                    <div class="machine-card" onclick="drawGacha('colour')">
+                        <div class="machine-image-placeholder">
+                            <img src="colour_01.png" alt="Colour Gacha"> 
+                        </div>
+                        <div class="machine-label">COLOUR GACHA</div>
+                    </div>
+                </div>
+
+                <div class="diorama-side">
+                    <div id="canvas-colour"></div>
+                </div>
+        </div>
+            <section class="story-container">
+                <div class="lore-panel" id="colour-lore">
+                    <h2 style="color:var(--accent-cyan)">COLOR SPECTRUM (216 WEB-SAFE)</h2>
+                    <div class="lore-text">
+                        <p class="lang-en">The 216 Web-Safe color palette ensured consistent rendering across monitors in the 90s.</p>
+                        <p class="lang-yue">216 網頁安全色保證咗 90 年代唔同螢幕睇落嘅顏色都係一樣。</p>
+                    </div>
+                </div>
+                <div id="grid-colour" class="collection-grid"></div>
+            </section>
+        </div>
+
+        <div id="tab-chemical" class="tab-content" style="display: none;">
+            <div class="split-layout">
+                <div class="machine-side">
+                    <div class="machine-card" onclick="drawGacha('chemical')">
+                        <div class="machine-image-placeholder">
+                            <img src="chem_01.png" alt="Chemical Gacha">
+                        </div>
+                        <div class="machine-label">CHEM GACHA</div>
+                    </div>
+                </div>
+                <div class="diorama-side">
+                    <canvas id="canvas-donut" width="1000" height="500"></canvas>
+                    <a href="https://www.a1k0n.net/2011/07/20/donut-math.html" target="_blank" class="donut-reference">[ BY A1K0N.NET ]</a>
+                </div>
+            </div>
+
+            <section class="story-container">
+                <div class="lore-panel" id="chemical-lore">
+                    <h2 style="color:var(--accent-cyan)">PERIODIC TABLE OF ELEMENTS</h2>
+                    <div class="lore-text">
+                        <p class="lang-en">The blueprint of the cosmos, organizing matter by atomic structure.</p>                        
+                        <p class="lang-yue">宇宙嘅藍圖，根據原子結構排列萬物。</p>
+                    </div>
+                </div>
+                <div id="grid-chemical" class="periodic-grid"></div>
+            </section>
+        </div>
+
+        <div id="hover-tooltip" class="floating-tooltip"></div>
+
+        <div id="tab-hk" class="tab-content" style="display: none;">
+                    <div class="split-layout">
+                        <div class="machine-side">
+                            <div class="machine-card" onclick="drawGacha('hk')">
+                                <div class="machine-image-placeholder">
+                                    <img src="hk_01.png" alt="HK Gacha">
+                                </div>
+                                <div class="machine-label">HK GACHA</div>
+                            </div>
+                        </div>
+                        
+                        <div class="diorama-side" style="background: transparent; border: none; box-shadow: none; position: relative;">
+                            <canvas id="canvas-cube"></canvas>
+                            <a href="#" class="donut-reference" style="bottom: 20px;">[ BY BLUE LIFE ]</a>
+                        </div>
+                    </div>
+
+                    <section class="story-container">
+                        <div class="lore-panel" id="hk-lore">
+                            <h2 style="color:var(--accent-cyan)">HONG KONG 3D (ASCII CUBE)</h2>
+                            <div class="lore-text">
+                                <p class="lang-en">A holographic projection of geometric structures and architectural matrices.</p>
+                                <p class="lang-yue">幾何結構與建築矩陣嘅全息投影。</p>
+                            </div>
+                        </div>
+                        <div id="grid-hk" class="collection-grid"></div> 
+                    </section>
+                </div>
+
+
+
+
+    </main>
+
+    <script src="js/database.js"></script>
+    <script src="js/hex-grid.js"></script>
+    <script src="js/donut-3d.js"></script>
+    <script src="js/gacha.js"></script>
+    <script src="js/ui.js"></script>
+
+</body>
+</html>

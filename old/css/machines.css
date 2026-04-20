@@ -1,0 +1,194 @@
+/* ==========================================
+   MACHINES: 無框浮空抽蛋機
+   ========================================== */
+.machines-flex-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1000px;
+    height: auto;
+}
+
+.machine-card {
+    background: transparent; 
+    border: none;            
+    width: 320px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    box-shadow: none;        
+}
+
+.machine-card:hover {
+    transform: translateY(-10px); 
+    filter: drop-shadow(0 0 25px rgba(0, 255, 204, 0.7));
+}
+
+.machine-image-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: transparent; 
+    border-bottom: none;     
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.machine-image-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    display: block;
+}
+
+.machine-label {
+    padding: 20px 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--accent-cyan);
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    letter-spacing: 3px;
+    background: transparent; 
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.4); 
+}
+
+/* ==========================================
+   GACHA POPUP & RARITY FRAMES
+   ========================================== */
+.gacha-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    z-index: 9999;
+    padding: 20px;
+    text-align: center;
+    pointer-events: none; /* 唔阻擋點擊 */
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    width: 200px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+}
+
+.gacha-popup.fade-out {
+    animation: fadeOut 0.5s ease forwards;
+}
+
+.gacha-rarity-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.gacha-color-box {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+
+.gacha-status {
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #fff;
+    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+}
+
+/* 🟢 COMMON (N) - Wooden Frame */
+.frame-n {
+    background: #3e2723;
+    border: 6px solid #8b5a2b;
+    border-radius: 4px;
+}
+.frame-n .gacha-rarity-badge { color: #d7ccc8; }
+
+/* 🔵 RARE (R) - Metal Frame */
+.frame-r {
+    background: #424242;
+    border: 6px solid #9e9e9e;
+    border-radius: 2px;
+}
+.frame-r .gacha-rarity-badge { color: #64b5f6; }
+
+/* 🟣 SUPER RARE (SR) - Silver Frame */
+.frame-sr {
+    background: #263238;
+    border: 6px solid #eceff1;
+    box-shadow: 0 0 20px #eceff1, inset 0 0 10px #eceff1;
+}
+.frame-sr .gacha-rarity-badge { color: #ce93d8; text-shadow: 0 0 10px #ce93d8; }
+
+/* 🔴 ULTRA RARE (UR) - Rainbow + Crystal */
+.frame-ur {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0)), #0d1b18;
+    border: 6px solid;
+    border-image: linear-gradient(45deg, red, yellow, green, cyan, blue, magenta) 1;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+}
+.frame-ur .gacha-rarity-badge { 
+    background: -webkit-linear-gradient(45deg, #ff0000, #00ff00, #0000ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8);
+}
+
+/* 👑 EXTREME RARE (EXR) - Black Wood + Golden Words */
+.frame-exr {
+    background: #000000;
+    border: 6px solid #ffcc00;
+    box-shadow: 0 0 50px #ffcc00, inset 0 0 20px #ffcc00;
+    border-radius: 8px;
+}
+.frame-exr .gacha-rarity-badge { color: #ffcc00; text-shadow: 0 0 15px #ffcc00; }
+
+@keyframes popIn {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes fadeOut {
+    to { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+}
+
+/* 💀 DEV HACK BUTTON */
+.dev-hack-tab {
+    position: fixed;
+    bottom: 0;
+    right: 20px;
+    background: #333;
+    color: #888;
+    padding: 5px 15px;
+    font-family: monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+    z-index: 10000;
+    border: 1px solid #555;
+    border-bottom: none;
+}
+.dev-hack-tab:hover { background: #555; color: #fff; }
+
+/* 🌟 抽中後飛向目標嘅動畫元件 */
+.flying-orb {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    transition: all 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); /* 完美拋物線減速感 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.8);
+}

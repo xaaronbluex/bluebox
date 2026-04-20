@@ -1,0 +1,176 @@
+/* ==========================================
+   1. 基礎與全域設定 (Variables & Base)
+   ========================================== */
+:root {
+    --bg-color: #0b1412;
+    --panel-bg: #0d1b18;
+    --accent-teal: #4dc29e;
+    --accent-cyan: #6ceaea;
+    --text-main: #e0f2ed;
+    --text-dim: #2a5247;
+    --ssr-gold: #ffcc00;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0; 
+    padding: 0;
+    text-align: center;
+    line-height: 1.5;
+    height: auto; 
+    overflow-y: auto !important; 
+    overflow-x: visible;
+}
+
+/* 基礎排版容器 */
+.tab-content {
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* 全域輔助組件 (Tooltips) */
+.floating-tooltip {
+    position: fixed;
+    pointer-events: none; 
+    background: rgba(13, 27, 24, 0.95);
+    color: var(--accent-cyan);
+    border: 1px solid var(--accent-teal);
+    padding: 8px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 10000;
+    display: none; 
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    text-align: left;
+    line-height: 1.4;
+    transform: translate(15px, 15px); 
+}
+
+/* ==========================================
+   全新左右分割排版 (優化版)
+   ========================================== */
+.split-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 40px; 
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.machine-side {
+    flex: 0 0 280px; /* 稍微縮細部機，騰出空間俾畫布 */
+    z-index: 10;
+}
+
+.diorama-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border-radius: 15px;
+    border: none;
+    overflow: hidden; /* 確保 3D 背景唔會溢出 */
+    min-height: 500px;
+    position: relative;
+}
+
+/* 讓 Canvas 自動適應容器，唔好死硬 1000px */
+#canvas-colour, #canvas-donut {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* 🌟 飛行動畫 Orb 補完 */
+.flying-orb {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0 0 10px #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 25px currentColor;
+}
+
+/* ==========================================
+   DEV TOOLS 測試面板 (絕對暴力修正版)
+   ========================================== */
+.dev-panel {
+    position: fixed !important; /* 🌟 鎖死喺螢幕上 */
+    top: 150px !important;      /* 🌟 距離最頂 10px */
+    left: 10px !important;     /* 🌟 距離最左 10px */
+    display: flex !important;  /* 強制橫排顯示 */
+    gap: 10px;
+    z-index: 999999 !important; /* 🌟 極高層級，穿透所有 UI */
+    background: rgba(0, 0, 0, 0.5); /* 加個半透明底色，費事同標題重疊睇唔到 */
+    padding: 10px;
+    border-radius: 8px;
+    pointer-events: auto !important; /* 確保可以被點擊 */
+}
+
+.dev-panel button {
+    padding: 8px 15px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+/* 一鍵全開掣 - 鮮綠色 */
+.btn-all-on {
+    background: #000;
+    color: #00ffcc;
+    border: 2px solid #00ffcc;
+}
+.btn-all-on:hover { background: #00ffcc; color: #000; }
+
+/* 重置掣 - 鮮紅色 */
+.btn-reset {
+    background: #000;
+    color: #ff3366;
+    border: 2px solid #ff3366;
+}
+.btn-reset:hover { background: #ff3366; color: #000; }
+/* 一鍵全開掣 - 鮮綠色 */
+.btn-all-on {
+    background: #000;
+    color: #00ffcc;
+    border: 2px solid #00ffcc;
+}
+.btn-all-on:hover {
+    background: #00ffcc;
+    color: #000;
+}
+
+/* 重置掣 - 鮮紅色 */
+.btn-reset {
+    background: #000;
+    color: #ff3366;
+    border: 2px solid #ff3366;
+}
+.btn-reset:hover {
+    background: #ff3366;
+    color: #000;
+}

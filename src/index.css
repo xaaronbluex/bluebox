@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: #165f54;
+  color: #e8fff9;
+}
+
+@keyframes sun-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.03);
+  }
+}
+
+@keyframes planet-texture-shift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 180% 50%;
+  }
+}
+
+.solar-perspective {
+  perspective: 1300px;
+  perspective-origin: 52% 50%;
+}
+
+.solar-tilt {
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateX(8deg);
+  transform-origin: 50% 50%;
+  left: 50%;
+  top: 50%;
+  width: min(1300px, 96vw);
+  height: min(940px, 95vh);
+}
+
+.hex-shape {
+  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+}
+
+.inventory-cell:hover {
+  box-shadow: 0 0 18px rgba(145, 255, 224, 0.55);
+}

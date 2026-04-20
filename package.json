@@ -1,0 +1,28 @@
+{
+  "name": "gacha-diorama",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "bodyparts3d:convert": "node scripts/bodyparts3d-stl-to-glb.mjs",
+    "bodyparts3d:head-only": "node scripts/bodyparts3d-stl-to-glb.mjs --no-per-file"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "gltf-pipeline": "^4.3.1",
+    "live-server": "^1.2.2",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.10"
+  }
+}
