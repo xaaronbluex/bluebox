@@ -50,3 +50,15 @@ body {
 .inventory-cell:hover {
   box-shadow: 0 0 18px rgba(145, 255, 224, 0.55);
 }
+
+.hero-stamp {
+  top: var(--hero-stamp-top, 0px);
+  left: var(--hero-stamp-left, 0px);
+  width: var(--hero-stamp-width, 200px);
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
+
+.locked {
+  filter: brightness(0);
+  opacity: 0.5;
+}

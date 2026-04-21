@@ -7,7 +7,6 @@ import SolarSystemThree from "./components/SolarSystemThree";
 import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
-import ModelHoverPreview from "./components/ModelHoverPreview";
 import { drawFromPool } from "./lib/gacha";
 
 const itemAssetEntries = Object.entries(
@@ -17,6 +16,11 @@ const itemAssetEntries = Object.entries(
     import: "default",
   })
 );
+
+const heroGalleryArtworks = [
+  { id: "hero-00", imageUrl: "/hero_00.png", description: "Hero 00" },
+  { id: "hero-01", imageUrl: "/hero_01.png", description: "Hero 01" },
+];
 
 function createInitialItemInventory() {
   const grouped = new Map();
@@ -53,6 +57,7 @@ const tabs = [
   { id: "planets", label: "Planets" },
   { id: "heart", label: "心經" },
   { id: "items", label: "Items" },
+  { id: "hero", label: "AI Arts" },
   { id: "plants", label: "Plants" },
   { id: "mimic", label: "Mimic Insects" },
   { id: "ocean", label: "Ocean Creatures" },
@@ -198,7 +203,6 @@ export default function App() {
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, title: "", detail: "", color: "#00e6b8" });
   const [dropFading, setDropFading] = useState(false);
   const [planetScaleMode, setPlanetScaleMode] = useState("real");
-
   const colorUnlocked = useMemo(() => colors.filter((c) => c.unlocked).length, [colors]);
   const elementUnlocked = useMemo(() => elements.filter((e) => e.unlocked).length, [elements]);
   const planetUnlocked = useMemo(() => planets.filter((p) => p.unlocked).length, [planets]);
@@ -340,14 +344,14 @@ export default function App() {
   }
 
   function showItemPreview(slot, event) {
-    if (!slot.modelUrl) {
+    if (!slot.imageUrl) {
       setItemPreview(null);
       return;
     }
     clearItemPreviewHideTimer();
     const rect = event.currentTarget.getBoundingClientRect();
-    const popupWidth = 320;
-    const popupHeight = 300;
+    const popupWidth = 680;
+    const popupHeight = 760;
     let left = rect.right + 12;
     let top = rect.top - 18;
     if (left + popupWidth > window.innerWidth - 12) {
@@ -917,21 +921,54 @@ export default function App() {
                 </div>
               ))}
             </div>
-            {itemPreview?.slot?.modelUrl ? (
+            {itemPreview?.slot?.imageUrl ? (
               <div
-                className="fixed z-[70] w-[320px]"
+                className="fixed z-[70] w-[680px] rounded-xl border border-cyan-500/40 bg-slate-950/90 p-4 shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
                 style={{ left: `${itemPreview.left}px`, top: `${itemPreview.top}px` }}
                 onMouseEnter={clearItemPreviewHideTimer}
                 onMouseLeave={hideItemPreviewSoon}
               >
-                <ModelHoverPreview modelUrl={itemPreview.slot.modelUrl} fileName={itemPreview.slot.modelName} />
+                <p className="mb-2 truncate text-sm font-semibold text-cyan-100">
+                  {itemPreview.slot.modelName || `Slot ${itemPreview.slot.id}`}
+                </p>
+                <div className="overflow-hidden rounded-md border border-cyan-900/60 bg-slate-900">
+                  <img
+                    src={itemPreview.slot.imageUrl}
+                    alt={`Slot ${itemPreview.slot.id} preview`}
+                    className="h-[660px] w-full object-contain"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-cyan-200/70">
+                  PNG preview mode active. GLB data is still stored and uploadable.
+                </p>
               </div>
             ) : null}
           </section>
         )}
 
+        {tab === "hero" && (
+          <section className="p-2">
+            <div className="grid grid-cols-1 justify-items-center gap-10 lg:grid-cols-2">
+              {heroGalleryArtworks.map((art) => (
+                <article key={art.id} className="w-full max-w-[520px]">
+                  <div className="relative w-full overflow-visible">
+                    {art.imageUrl ? (
+                      <img src={art.imageUrl} alt={art.description} className="mx-auto block h-auto w-[92%]" />
+                    ) : (
+                      <div className="flex aspect-[4/3] items-center justify-center text-sm text-fuchsia-200/80">
+                        Missing image
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-3 text-center text-xs tracking-[0.08em] text-fuchsia-100/85">{art.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">
