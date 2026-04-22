@@ -8,6 +8,7 @@ import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
 import { drawFromPool } from "./lib/gacha";
+import aiArtsFromFolder from "virtual:ai-arts";
 
 const itemAssetEntries = Object.entries(
   import.meta.glob("../3d/*.{glb,gltf,obj,fbx,stl,dae,3ds,blend,png,jpg,jpeg,webp}", {
@@ -16,11 +17,6 @@ const itemAssetEntries = Object.entries(
     import: "default",
   })
 );
-
-const heroGalleryArtworks = [
-  { id: "hero-00", imageUrl: "/hero_00.png", description: "Hero 00" },
-  { id: "hero-01", imageUrl: "/hero_01.png", description: "Hero 01" },
-];
 
 function createInitialItemInventory() {
   const grouped = new Map();
@@ -949,20 +945,22 @@ export default function App() {
         {tab === "hero" && (
           <section className="p-2">
             <div className="grid grid-cols-1 justify-items-center gap-10 lg:grid-cols-2">
-              {heroGalleryArtworks.map((art) => (
-                <article key={art.id} className="w-full max-w-[520px]">
-                  <div className="relative w-full overflow-visible">
-                    {art.imageUrl ? (
-                      <img src={art.imageUrl} alt={art.description} className="mx-auto block h-auto w-[92%]" />
-                    ) : (
-                      <div className="flex aspect-[4/3] items-center justify-center text-sm text-fuchsia-200/80">
-                        Missing image
-                      </div>
-                    )}
-                  </div>
-                  <p className="mt-3 text-center text-xs tracking-[0.08em] text-fuchsia-100/85">{art.description}</p>
-                </article>
-              ))}
+              {aiArtsFromFolder.map((item) => {
+                const caption = item.id
+                  .replace(/\.[^.]+$/, "")
+                  .replace(/[-_]+/g, " ")
+                  .trim();
+                return (
+                  <article key={`ai-arts-${item.id}`} className="w-full max-w-[520px]">
+                    <div className="relative w-full overflow-visible">
+                      <img src={item.url} alt={caption || item.id} className="mx-auto block h-auto w-[92%]" />
+                    </div>
+                    <p className="mt-3 text-center text-xs tracking-[0.08em] text-fuchsia-100/85">
+                      {caption || item.id}
+                    </p>
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}
