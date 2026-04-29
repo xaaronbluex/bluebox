@@ -7,6 +7,7 @@ import SolarSystemThree from "./components/SolarSystemThree";
 import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
+import TowerDefenseGame from "./components/TowerDefenseGame";
 import { drawFromPool } from "./lib/gacha";
 import aiArtsFromFolder from "virtual:ai-arts";
 
@@ -53,19 +54,20 @@ const tabs = [
   { id: "planets", label: "Planets" },
   { id: "heart", label: "心經" },
   { id: "items", label: "Items" },
-  { id: "hero", label: "AI Arts" },
   { id: "plants", label: "Plants" },
   { id: "mimic", label: "Mimic Insects" },
   { id: "ocean", label: "Ocean Creatures" },
   { id: "music", label: "Music Instrument" },
   { id: "hk", label: "HK 3D Buildings" },
+  { id: "tower-defense", label: "3D Tower Defense" },
+  { id: "hero", label: "AI Arts" },
 ];
 
 const machineSlots = [
-  { id: "colour", title: "Colour", image: "/colour_01.png" },
-  { id: "chemical", title: "Elements", image: "/chem_01.png" },
+  { id: "colour", title: "Colour", image: "/machine/colour_01.png" },
+  { id: "chemical", title: "Elements", image: "/chem_02.png" },
   { id: "planets", title: "Planets", image: "/planets_01.png" },
-  { id: "items", title: "Items", image: "/items_01.png" },
+  { id: "items", title: "Items", image: "/random_00.png" },
   { id: "plants", title: "Plants", image: "/plants_01.png" },
   { id: "mimic", title: "Mimic Insects", image: "/mimic_01.png" },
   { id: "ocean", title: "Ocean Creatures", image: "/ocean_01.png" },
@@ -965,8 +967,14 @@ export default function App() {
           </section>
         )}
 
+        {tab === "tower-defense" && (
+          <section className="mx-auto max-w-7xl p-2">
+            <TowerDefenseGame />
+          </section>
+        )}
+
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">
