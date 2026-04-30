@@ -19,9 +19,17 @@ const itemAssetEntries = Object.entries(
   })
 );
 
+const staticAssetEntries = Object.entries(
+  import.meta.glob("../public/static/img/3d/*.{glb,gltf,obj,fbx,stl,dae,3ds,blend,png,jpg,jpeg,webp}", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  })
+);
+
 function createInitialItemInventory() {
   const grouped = new Map();
-  itemAssetEntries.forEach(([filePath, assetUrl]) => {
+  [...itemAssetEntries, ...staticAssetEntries].forEach(([filePath, assetUrl]) => {
     const fileName = filePath.split("/").pop() ?? "";
     const dot = fileName.lastIndexOf(".");
     if (dot <= 0) return;
@@ -53,7 +61,6 @@ const tabs = [
   { id: "chemical", label: "Elements" },
   { id: "planets", label: "Planets" },
   { id: "heart", label: "心經" },
-  { id: "items", label: "Items" },
   { id: "plants", label: "Plants" },
   { id: "mimic", label: "Mimic Insects" },
   { id: "ocean", label: "Ocean Creatures" },
@@ -61,19 +68,47 @@ const tabs = [
   { id: "hk", label: "HK 3D Buildings" },
   { id: "tower-defense", label: "3D Tower Defense" },
   { id: "hero", label: "AI Arts" },
+  { id: "items", label: "Random Items" },
 ];
 
 const machineSlots = [
-  { id: "colour", title: "Colour", image: "/machine/colour_01.png" },
-  { id: "chemical", title: "Elements", image: "/chem_02.png" },
-  { id: "planets", title: "Planets", image: "/planets_01.png" },
-  { id: "items", title: "Items", image: "/random_00.png" },
-  { id: "plants", title: "Plants", image: "/plants_01.png" },
-  { id: "mimic", title: "Mimic Insects", image: "/mimic_01.png" },
-  { id: "ocean", title: "Ocean Creatures", image: "/ocean_01.png" },
-  { id: "music", title: "Music Instrument", image: "/music_01.png" },
-  { id: "heart", title: "心經", image: "/heart_01.png" },
-  { id: "hk", title: "Hong Kong 3D", image: "/hk_01.png" },
+  { id: "colour", title: "Colour", image: "/static/img/machine/colour_01.png" },
+  { id: "chemical", title: "Elements", image: "/static/img/machine/chem_02.png" },
+  { id: "planets", title: "Planets", image: "/static/img/machine/planets_01.png" },
+  { id: "items", title: "Items", image: "/static/img/machine/random_00.png" },
+  { id: "plants", title: "Plants", image: "/static/img/machine/plants_01.png" },
+  { id: "mimic", title: "Mimic Insects", image: "/static/img/machine/mimic_01.png" },
+  { id: "ocean", title: "Ocean Creatures", image: "/static/img/machine/ocean_01.png" },
+  { id: "music", title: "Music Instrument", image: "/static/img/machine/music_01.png" },
+  { id: "heart", title: "心經", image: "/static/img/machine/heart_01.png" },
+  { id: "hk", title: "Hong Kong 3D", image: "/static/img/machine/hk_01.png" },
+];
+
+/**
+ * First 20 herbarium specimens: organic scatter (top/left %, rotation, scale).
+ * Tweak positions here to balance density; ids map to plantSlots[id - 1].
+ */
+const HERBARIUM_SCATTER_PLANTS = [
+  { id: 1, top: 9, left: 11, rotation: -6, scale: 0.9, label: "No. 1 — 邊境 sample" },
+  { id: 2, top: 14, left: 28, rotation: 4, scale: 1.08, label: "No. 2 — marsh reed" },
+  { id: 3, top: 22, left: 52, rotation: -3, scale: 0.94, label: "No. 3 — river moss" },
+  { id: 4, top: 18, left: 74, rotation: 7, scale: 1.12, label: "No. 4 — cliff fern" },
+  { id: 5, top: 32, left: 16, rotation: -5, scale: 1.02, label: "No. 5 — shade herb" },
+  { id: 6, top: 38, left: 42, rotation: 2, scale: 0.88, label: "No. 6 — dry scrub" },
+  { id: 7, top: 44, left: 68, rotation: -7, scale: 1.06, label: "No. 7 — coastal weed" },
+  { id: 8, top: 52, left: 8, rotation: 5, scale: 0.95, label: "No. 8 — field grass" },
+  { id: 9, top: 58, left: 32, rotation: -4, scale: 1.14, label: "No. 9 — thorn bush" },
+  { id: 10, top: 54, left: 58, rotation: 6, scale: 0.91, label: "No. 10 — sand dune" },
+  { id: 11, top: 64, left: 78, rotation: -2, scale: 1.0, label: "No. 11 — alpine leaf" },
+  { id: 12, top: 72, left: 22, rotation: 8, scale: 0.87, label: "No. 12 — bog lily" },
+  { id: 13, top: 76, left: 48, rotation: -8, scale: 1.1, label: "No. 13 — swamp vine" },
+  { id: 14, top: 68, left: 88, rotation: 3, scale: 0.93, label: "No. 14 — ridge oat" },
+  { id: 15, top: 82, left: 12, rotation: -5, scale: 1.05, label: "No. 15 — trail mint" },
+  { id: 16, top: 84, left: 38, rotation: 4, scale: 0.89, label: "No. 16 — dew petal" },
+  { id: 17, top: 80, left: 64, rotation: -6, scale: 1.07, label: "No. 17 — knotweed" },
+  { id: 18, top: 48, left: 92, rotation: 2, scale: 0.96, label: "No. 18 — sea thrift" },
+  { id: 19, top: 28, left: 86, rotation: -4, scale: 1.03, label: "No. 19 — pine sapling" },
+  { id: 20, top: 62, left: 6, rotation: 5, scale: 0.98, label: "No. 20 — old growth" },
 ];
 
 /** Sun-ward order: Mercury, Venus, Earth (full scene), then outer planets. */
@@ -167,18 +202,16 @@ function FloatingMachine({ image, title, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="group flex flex-col items-center gap-2 text-center"
+      className="group flex items-center justify-center"
     >
       <img
         src={image}
         alt={title}
         className="h-48 w-48 object-contain drop-shadow-[0_0_25px_rgba(16,255,210,0.45)] transition group-hover:scale-105"
         onError={(e) => {
-          e.currentTarget.src = "/machine_00.png";
+          e.currentTarget.src = "/static/img/machine/machine_00.png";
         }}
       />
-      <p className="font-bold tracking-wide text-emerald-100">{title}</p>
-      <p className="text-xs text-emerald-300/80">Image name: {title.toLowerCase().replaceAll(" ", "-")}_01.png</p>
     </button>
   );
 }
@@ -230,6 +263,14 @@ export default function App() {
     );
   }, [sutraCharacters]);
   const webSafeRectGrid = useMemo(() => createWebSafeRectGrid(), []);
+  const plantSlots = useMemo(
+    () =>
+      Array.from({ length: 50 }, (_, idx) => ({
+        id: idx + 1,
+        unlocked: idx < 10,
+      })),
+    []
+  );
 
   const handlePlanetHover = useCallback((planet, x, y) => {
     setTooltip({
@@ -530,7 +571,7 @@ export default function App() {
           <p className="text-emerald-300">Gacha Diorama</p>
         </header>
 
-        <nav className="mb-6 flex flex-nowrap justify-center gap-2 overflow-x-auto pb-1">
+        <nav className="mb-6 grid grid-cols-2 gap-2 pb-1 sm:grid-cols-4 lg:grid-cols-7">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -568,7 +609,7 @@ export default function App() {
         })()}
 
         {tab === "machines" && (
-          <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="mx-auto grid max-w-6xl justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {machineSlots.map((item) => (
               <FloatingMachine key={item.id} image={item.image} title={item.title} onClick={() => setTab(item.id)} />
             ))}
@@ -944,6 +985,60 @@ export default function App() {
           </section>
         )}
 
+        {tab === "plants" && (
+          <section className="space-y-4 rounded-xl border border-amber-900/30 bg-[#1f140f]/70 p-4">
+            <div className="plants-cabinet-panel">
+              <div className="plants-cabinet-grid">
+                {plantSlots.map((slot) => (
+                  <div
+                    key={`drawer-${slot.id}`}
+                    className={`plants-cabinet-drawer ${slot.unlocked ? "unlocked-drawer" : ""}`}
+                    title={`Drawer ${slot.id}`}
+                  >
+                    {slot.unlocked ? "植物" : ""}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="plants-parchment-panel">
+              <header className="plants-parchment-header">
+                <h2 className="plants-parchment-title">Explorer&apos;s Herbarium</h2>
+                <p className="plants-parchment-subtitle">
+                  Field notes — first 20 specimens scattered as in a traveller&apos;s notebook (slots 1–20).
+                </p>
+              </header>
+              <div className="plants-parchment-scatter">
+                {HERBARIUM_SCATTER_PLANTS.map((cfg) => {
+                  const slot = plantSlots[cfg.id - 1];
+                  const unlocked = slot?.unlocked ?? false;
+                  return (
+                    <button
+                      key={`herbarium-${cfg.id}`}
+                      type="button"
+                      className="plants-herbarium-specimen"
+                      style={{ top: `${cfg.top}%`, left: `${cfg.left}%` }}
+                      title={`${cfg.label}${unlocked ? "" : " (locked)"}`}
+                    >
+                      <div
+                        className="plants-herbarium-stamp"
+                        style={{
+                          transform: `translate(-50%, -50%) rotate(${cfg.rotation}deg) scale(${cfg.scale})`,
+                        }}
+                      >
+                        <div className={`plants-plant-inner ${unlocked ? "unlocked-plant" : "locked-plant"}`}>
+                          <div className="plants-watercolor-placeholder" aria-hidden />
+                        </div>
+                        <span className="plants-herbarium-label">{cfg.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {tab === "hero" && (
           <section className="p-2">
             <div className="grid grid-cols-1 justify-items-center gap-10 lg:grid-cols-2">
@@ -974,7 +1069,7 @@ export default function App() {
         )}
 
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense", "plants"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">

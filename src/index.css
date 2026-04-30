@@ -62,3 +62,156 @@ body {
   filter: brightness(0);
   opacity: 0.5;
 }
+
+.plants-cabinet-panel {
+  border: 1px solid #3a1108;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #7a2f1d 0%, #6b2414 55%, #562015 100%);
+  box-shadow: inset 0 0 24px rgba(23, 8, 5, 0.55), 0 8px 22px rgba(0, 0, 0, 0.35);
+  padding: 12px;
+}
+
+.plants-cabinet-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.plants-cabinet-drawer {
+  min-height: 46px;
+  border: 1px solid #3a1108;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #7c2d1a, #6b2414);
+  box-shadow: inset 0 2px 2px rgba(255, 188, 160, 0.14), inset 0 -3px 6px rgba(19, 6, 3, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unlocked-drawer {
+  color: #ffd700;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.8), 0 0 10px rgba(255, 215, 0, 0.4);
+  font-family: serif;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.plants-parchment-panel {
+  border: 1px solid #b68a5c;
+  border-radius: 12px;
+  padding: 16px;
+  background-image: url("/static/img/sheeppaper_00.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.plants-parchment-header {
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.35);
+  padding-bottom: 10px;
+  text-align: center;
+}
+
+.plants-parchment-title {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #5c3d1e;
+  text-shadow: 0 1px 0 rgba(255, 250, 235, 0.7);
+}
+
+.plants-parchment-subtitle {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: rgba(92, 61, 30, 0.75);
+}
+
+/* Organic scattered notebook layout — no rigid grid */
+.plants-parchment-scatter {
+  position: relative;
+  min-height: 820px;
+  margin-top: 8px;
+}
+
+.plants-herbarium-specimen {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.plants-herbarium-specimen:focus-visible {
+  outline: 2px solid #c9a227;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.plants-herbarium-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform-origin: center center;
+  pointer-events: none;
+}
+
+.plants-herbarium-specimen .plants-plant-inner {
+  pointer-events: auto;
+}
+
+.plants-herbarium-label {
+  display: block;
+  max-width: 140px;
+  font-family: "Georgia", "Palatino Linotype", "Book Antiqua", serif;
+  font-size: 0.68rem;
+  font-style: italic;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #3e2723;
+  opacity: 0.82;
+  text-shadow: 0 1px 0 rgba(255, 248, 235, 0.35);
+}
+
+.plants-plant-inner {
+  border-radius: 5px;
+  overflow: visible;
+  transition: all 0.3s ease-in-out;
+}
+
+.plants-watercolor-placeholder {
+  height: 44px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(100, 147, 95, 0.55), transparent 54%),
+    radial-gradient(circle at 68% 66%, rgba(166, 92, 68, 0.45), transparent 58%),
+    radial-gradient(circle at 52% 40%, rgba(90, 129, 161, 0.34), transparent 60%),
+    #e8d4ab;
+}
+
+/* Blueprint / locked: blue-ink filter; hover only scales, no gold glow */
+.locked-plant {
+  filter: grayscale(100%) sepia(100%) hue-rotate(180deg) opacity(0.6);
+}
+
+.plants-herbarium-specimen:hover .locked-plant {
+  transform: scale(0.92);
+}
+
+/* Full watercolor: hover zoom-out + shiny golden glow */
+.unlocked-plant {
+  filter: none;
+}
+
+.plants-herbarium-specimen:hover .unlocked-plant {
+  transform: scale(0.92);
+  filter: brightness(1.15) drop-shadow(0px 0px 12px rgba(255, 215, 0, 0.7));
+}

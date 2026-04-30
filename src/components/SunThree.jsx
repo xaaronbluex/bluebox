@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import sunJpg from "../../03_planet/sun.jpg";
+const SUN_MAP_URL = "/static/img/03_planet/sun.jpg";
 
 export default function SunThree() {
   const mountRef = useRef(null);
@@ -36,7 +36,7 @@ export default function SunThree() {
     scene.add(rim);
 
     const loader = new THREE.TextureLoader();
-    const sunTex = loader.load(sunJpg);
+    const sunTex = loader.load(SUN_MAP_URL);
     sunTex.colorSpace = THREE.SRGBColorSpace;
     sunTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 

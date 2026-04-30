@@ -1,10 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import earthColourDJpg from "../../03_planet/earth_colour_d.jpg";
-import moon1Jpg from "../../03_planet/moon1.jpg";
-
-const MOON_MAP_URL = moon1Jpg;
+const EARTH_MAP_URL = "/static/img/03_planet/earth_colour_d.jpg";
+const MOON_MAP_URL = "/static/img/03_planet/moon1.jpg";
 
 export default function EarthMoonThree() {
   const mountRef = useRef(null);
@@ -43,7 +41,7 @@ export default function EarthMoonThree() {
     scene.add(fillLight);
 
     const loader = new THREE.TextureLoader();
-    const earthTex = loader.load(earthColourDJpg);
+    const earthTex = loader.load(EARTH_MAP_URL);
     earthTex.colorSpace = THREE.SRGBColorSpace;
     earthTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 

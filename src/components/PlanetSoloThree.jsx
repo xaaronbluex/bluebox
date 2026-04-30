@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const textureByBase = Object.entries(
-  import.meta.glob("../../03_planet/*.{jpg,jpeg,png,webp}", { eager: true, import: "default" })
+  import.meta.glob("../../public/static/img/03_planet/*.{jpg,jpeg,png,webp}", { eager: true, import: "default" })
 ).reduce((acc, [filePath, assetUrl]) => {
   const fileName = filePath.split("/").pop() ?? "";
   const base = fileName.replace(/\.[^.]+$/, "").toLowerCase();
