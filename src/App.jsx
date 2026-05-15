@@ -7,6 +7,8 @@ import SolarSystemThree from "./components/SolarSystemThree";
 import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
+import EarthGlobeMap from "./components/EarthGlobeMap";
+import MapsSection from "./components/MapsSection";
 import TowerDefenseGame from "./components/TowerDefenseGame";
 import { drawFromPool } from "./lib/gacha";
 import aiArtsFromFolder from "virtual:ai-arts";
@@ -26,6 +28,26 @@ const staticAssetEntries = Object.entries(
     import: "default",
   })
 );
+
+const hkBuildingEntries = Object.entries(
+  import.meta.glob("../public/static/img/3d/buildings/*.{png,jpg,jpeg,webp}", {
+    eager: true,
+    query: "?url",
+    import: "default",
+  })
+)
+  .map(([filePath, assetUrl]) => ({
+    fileName: filePath.split("/").pop() ?? "",
+    url: assetUrl,
+  }))
+  .sort((a, b) => a.fileName.localeCompare(b.fileName))
+  .map((entry) => ({
+    ...entry,
+    alt: entry.fileName
+      .replace(/\.[^.]+$/, "")
+      .replace(/[_-]+/g, " ")
+      .trim(),
+  }));
 
 function createInitialItemInventory() {
   const grouped = new Map();
@@ -63,9 +85,9 @@ const tabs = [
   { id: "heart", label: "心經" },
   { id: "plants", label: "Plants" },
   { id: "mimic", label: "Mimic Insects" },
-  { id: "ocean", label: "Ocean Creatures" },
-  { id: "music", label: "Music Instrument" },
+  { id: "stamps", label: "Stamps" },
   { id: "hk", label: "HK 3D Buildings" },
+  { id: "maps", label: "Maps" },
   { id: "tower-defense", label: "3D Tower Defense" },
   { id: "hero", label: "AI Arts" },
   { id: "items", label: "Random Items" },
@@ -78,37 +100,39 @@ const machineSlots = [
   { id: "items", title: "Items", image: "/static/img/machine/random_00.png" },
   { id: "plants", title: "Plants", image: "/static/img/machine/plants_01.png" },
   { id: "mimic", title: "Mimic Insects", image: "/static/img/machine/mimic_01.png" },
-  { id: "ocean", title: "Ocean Creatures", image: "/static/img/machine/ocean_01.png" },
-  { id: "music", title: "Music Instrument", image: "/static/img/machine/music_01.png" },
+  { id: "stamps", title: "Stamps", image: "/static/img/machine/ocean_01.png" },
   { id: "heart", title: "心經", image: "/static/img/machine/heart_01.png" },
   { id: "hk", title: "Hong Kong 3D", image: "/static/img/machine/hk_01.png" },
+  { id: "maps", title: "Maps", image: "/static/img/machine/maps_01.png" },
 ];
 
 /**
- * First 20 herbarium specimens: organic scatter (top/left %, rotation, scale).
- * Tweak positions here to balance density; ids map to plantSlots[id - 1].
+ * First 20 herbarium specimens: positions as % of parchment panel.
+ * Layout follows a two-page spread: left page ~12–42%, right ~56–86%, avoiding burnt edges
+ * and staying over the lighter yellow parchment bands (reference: antique open journal).
+ * Labels echo Latin + Chinese field-note style from your reference sheet.
  */
 const HERBARIUM_SCATTER_PLANTS = [
-  { id: 1, top: 9, left: 11, rotation: -6, scale: 0.9, label: "No. 1 — 邊境 sample" },
-  { id: 2, top: 14, left: 28, rotation: 4, scale: 1.08, label: "No. 2 — marsh reed" },
-  { id: 3, top: 22, left: 52, rotation: -3, scale: 0.94, label: "No. 3 — river moss" },
-  { id: 4, top: 18, left: 74, rotation: 7, scale: 1.12, label: "No. 4 — cliff fern" },
-  { id: 5, top: 32, left: 16, rotation: -5, scale: 1.02, label: "No. 5 — shade herb" },
-  { id: 6, top: 38, left: 42, rotation: 2, scale: 0.88, label: "No. 6 — dry scrub" },
-  { id: 7, top: 44, left: 68, rotation: -7, scale: 1.06, label: "No. 7 — coastal weed" },
-  { id: 8, top: 52, left: 8, rotation: 5, scale: 0.95, label: "No. 8 — field grass" },
-  { id: 9, top: 58, left: 32, rotation: -4, scale: 1.14, label: "No. 9 — thorn bush" },
-  { id: 10, top: 54, left: 58, rotation: 6, scale: 0.91, label: "No. 10 — sand dune" },
-  { id: 11, top: 64, left: 78, rotation: -2, scale: 1.0, label: "No. 11 — alpine leaf" },
-  { id: 12, top: 72, left: 22, rotation: 8, scale: 0.87, label: "No. 12 — bog lily" },
-  { id: 13, top: 76, left: 48, rotation: -8, scale: 1.1, label: "No. 13 — swamp vine" },
-  { id: 14, top: 68, left: 88, rotation: 3, scale: 0.93, label: "No. 14 — ridge oat" },
-  { id: 15, top: 82, left: 12, rotation: -5, scale: 1.05, label: "No. 15 — trail mint" },
-  { id: 16, top: 84, left: 38, rotation: 4, scale: 0.89, label: "No. 16 — dew petal" },
-  { id: 17, top: 80, left: 64, rotation: -6, scale: 1.07, label: "No. 17 — knotweed" },
-  { id: 18, top: 48, left: 92, rotation: 2, scale: 0.96, label: "No. 18 — sea thrift" },
-  { id: 19, top: 28, left: 86, rotation: -4, scale: 1.03, label: "No. 19 — pine sapling" },
-  { id: 20, top: 62, left: 6, rotation: 5, scale: 0.98, label: "No. 20 — old growth" },
+  { id: 1, top: 17, left: 17, rotation: -4, scale: 0.92, label: "Viola sp.\n紫花地丁" },
+  { id: 2, top: 22, left: 32, rotation: 3, scale: 1.02, label: "Dryopteris\n鐵線蕨" },
+  { id: 3, top: 34, left: 14, rotation: -5, scale: 0.9, label: "Panax\n人參屬" },
+  { id: 4, top: 40, left: 36, rotation: 4, scale: 1.06, label: "Aristolochia debilis\n馬兜鈴" },
+  { id: 5, top: 52, left: 20, rotation: -3, scale: 0.94, label: "Arisaema\n天南星" },
+  { id: 6, top: 58, left: 38, rotation: 5, scale: 1.0, label: "Epimedium\n淫羊藿" },
+  { id: 7, top: 70, left: 16, rotation: -6, scale: 0.88, label: "Asarum\n細辛" },
+  { id: 8, top: 76, left: 34, rotation: 2, scale: 1.04, label: "Polygonatum\n黃精" },
+  { id: 9, top: 64, left: 28, rotation: -2, scale: 0.96, label: "Gastrodia\n天麻" },
+  { id: 10, top: 48, left: 24, rotation: 4, scale: 0.93, label: "Coptis\n黃連" },
+  { id: 11, top: 18, left: 62, rotation: -4, scale: 1.05, label: "Zingiber officinale\n薑" },
+  { id: 12, top: 24, left: 78, rotation: 5, scale: 0.91, label: "Schisandra chinensis\n五味子" },
+  { id: 13, top: 36, left: 60, rotation: -3, scale: 1.08, label: "Cirsium\n薊屬" },
+  { id: 14, top: 44, left: 76, rotation: 3, scale: 0.95, label: "Berberis\n小檗" },
+  { id: 15, top: 54, left: 64, rotation: -5, scale: 1.0, label: "Rosa rugosa\n玫瑰" },
+  { id: 16, top: 62, left: 80, rotation: 4, scale: 0.92, label: "Paeonia\n芍藥" },
+  { id: 17, top: 72, left: 58, rotation: -4, scale: 1.06, label: "Rehmannia\n熟地黃" },
+  { id: 18, top: 78, left: 74, rotation: 2, scale: 0.9, label: "Scutellaria\n黃芩" },
+  { id: 19, top: 30, left: 70, rotation: -6, scale: 1.03, label: "Lonicera\n忍冬" },
+  { id: 20, top: 66, left: 68, rotation: 3, scale: 0.97, label: "Morus\n桑" },
 ];
 
 /** Sun-ward order: Mercury, Venus, Earth (full scene), then outer planets. */
@@ -794,6 +818,18 @@ export default function App() {
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                 <button
+                  type="button"
+                  onClick={() => setPlanetScaleMode("earth-globe")}
+                  className={`rounded-full px-4 py-1 text-xs font-bold transition ${
+                    planetScaleMode === "earth-globe"
+                      ? "bg-teal-300 text-slate-950 shadow-[0_0_16px_rgba(45,212,191,0.55)]"
+                      : "bg-slate-900/70 text-slate-200 hover:bg-slate-700/80"
+                  }`}
+                >
+                  Earth Globe
+                </button>
+                <button
+                  type="button"
                   onClick={() => setPlanetScaleMode("real")}
                   className={`rounded-full px-4 py-1 text-xs font-bold transition ${
                     planetScaleMode === "real"
@@ -804,6 +840,7 @@ export default function App() {
                   Solar System
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPlanetScaleMode("sun")}
                   className={`rounded-full px-4 py-1 text-xs font-bold transition ${
                     planetScaleMode === "sun"
@@ -833,7 +870,9 @@ export default function App() {
             </div>
 
             <div className="relative z-10 mx-auto h-[calc(100vh-320px)] min-h-[560px] w-full max-w-[1650px]">
-              {planetScaleMode === "earth" ? (
+              {planetScaleMode === "earth-globe" ? (
+                <EarthGlobeMap />
+              ) : planetScaleMode === "earth" ? (
                 <EarthMoonThree />
               ) : planetScaleMode === "sun" ? (
                 <SunThree />
@@ -849,16 +888,18 @@ export default function App() {
               )}
             </div>
 
-            <div className="absolute bottom-6 right-3 z-20 max-w-[230px] rounded-md bg-black/25 px-2 py-1 text-right text-[10px] leading-tight text-slate-100/90 sm:bottom-8 sm:right-6">
-              <p>Spin ratio: 1 minute = 5 Earth days</p>
-              <p className="text-slate-300/90">轉速比例：1 分鐘 = 5 地球日</p>
-              <p>GMT {spaceNow.toUTCString().replace("GMT", "").trim()}</p>
-              <p className="text-slate-300/90">格林威治時間</p>
-              <p>Universe age: 13.8 billion years</p>
-              <p className="text-slate-300/90">宇宙年齡：約 138 億年</p>
-              <p>Voyager 1 distance: ~24.6 billion km</p>
-              <p className="text-slate-300/90">航海家一號距離：約 246 億公里</p>
-            </div>
+            {planetScaleMode !== "earth-globe" && (
+              <div className="absolute bottom-6 right-3 z-20 max-w-[230px] rounded-md bg-black/25 px-2 py-1 text-right text-[10px] leading-tight text-slate-100/90 sm:bottom-8 sm:right-6">
+                <p>Spin ratio: 1 minute = 5 Earth days</p>
+                <p className="text-slate-300/90">轉速比例：1 分鐘 = 5 地球日</p>
+                <p>GMT {spaceNow.toUTCString().replace("GMT", "").trim()}</p>
+                <p className="text-slate-300/90">格林威治時間</p>
+                <p>Universe age: 13.8 billion years</p>
+                <p className="text-slate-300/90">宇宙年齡：約 138 億年</p>
+                <p>Voyager 1 distance: ~24.6 billion km</p>
+                <p className="text-slate-300/90">航海家一號距離：約 246 億公里</p>
+              </div>
+            )}
           </section>
         )}
 
@@ -986,55 +1027,57 @@ export default function App() {
         )}
 
         {tab === "plants" && (
-          <section className="space-y-4 rounded-xl border border-amber-900/30 bg-[#1f140f]/70 p-4">
-            <div className="plants-cabinet-panel">
-              <div className="plants-cabinet-grid">
-                {plantSlots.map((slot) => (
-                  <div
-                    key={`drawer-${slot.id}`}
-                    className={`plants-cabinet-drawer ${slot.unlocked ? "unlocked-drawer" : ""}`}
-                    title={`Drawer ${slot.id}`}
-                  >
-                    {slot.unlocked ? "植物" : ""}
-                  </div>
-                ))}
-              </div>
+          <section className="rounded-xl border border-amber-900/30 bg-[#1f140f]/70 p-4">
+            <div className="grid grid-cols-1 gap-4">
+              <img
+                src="/static/img/04_plants/plants_01.png"
+                alt="Plants 01"
+                className="w-full rounded-lg border border-amber-900/30 object-cover"
+              />
+              <img
+                src="/static/img/04_plants/plants_11.png"
+                alt="Plants 11"
+                className="w-full rounded-lg border border-amber-900/30 object-cover"
+              />
             </div>
+          </section>
+        )}
 
-            <div className="plants-parchment-panel">
-              <header className="plants-parchment-header">
-                <h2 className="plants-parchment-title">Explorer&apos;s Herbarium</h2>
-                <p className="plants-parchment-subtitle">
-                  Field notes — first 20 specimens scattered as in a traveller&apos;s notebook (slots 1–20).
-                </p>
-              </header>
-              <div className="plants-parchment-scatter">
-                {HERBARIUM_SCATTER_PLANTS.map((cfg) => {
-                  const slot = plantSlots[cfg.id - 1];
-                  const unlocked = slot?.unlocked ?? false;
-                  return (
-                    <button
-                      key={`herbarium-${cfg.id}`}
-                      type="button"
-                      className="plants-herbarium-specimen"
-                      style={{ top: `${cfg.top}%`, left: `${cfg.left}%` }}
-                      title={`${cfg.label}${unlocked ? "" : " (locked)"}`}
-                    >
-                      <div
-                        className="plants-herbarium-stamp"
-                        style={{
-                          transform: `translate(-50%, -50%) rotate(${cfg.rotation}deg) scale(${cfg.scale})`,
-                        }}
-                      >
-                        <div className={`plants-plant-inner ${unlocked ? "unlocked-plant" : "locked-plant"}`}>
-                          <div className="plants-watercolor-placeholder" aria-hidden />
-                        </div>
-                        <span className="plants-herbarium-label">{cfg.label}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+        {tab === "mimic" && (
+          <section className="rounded-xl border border-emerald-800/60 bg-panel p-4">
+            <div className="grid grid-cols-1 gap-4">
+              <img
+                src="/static/img/05_insects/insect_scene_01.png"
+                alt="Mimic insects scene 01"
+                className="mx-auto w-full rounded-lg border border-emerald-800/40 object-cover"
+              />
+              <img
+                src="/static/img/05_insects/insect_scene_02.png"
+                alt="Mimic insects scene 02"
+                className="mx-auto w-full rounded-lg border border-emerald-800/40 object-cover"
+              />
+            </div>
+          </section>
+        )}
+
+        {tab === "stamps" && (
+          <section className="rounded-xl border border-violet-800/50 bg-panel p-4">
+            <div className="grid grid-cols-1 gap-4">
+              <img
+                src="/static/img/stamps/mushroom_03.png"
+                alt="Forest stamp sheet — fungi and forest floor"
+                className="mx-auto w-full rounded-lg border border-violet-800/40 object-cover"
+              />
+              <img
+                src="/static/img/stamps/dino_02.png"
+                alt="Prehistoric stamp sheet — dinosaurs"
+                className="mx-auto w-full rounded-lg border border-violet-800/40 object-cover"
+              />
+              <img
+                src="/static/img/stamps/ocean_01.png"
+                alt="Ocean stamp sheet — coral reef marine life"
+                className="mx-auto w-full rounded-lg border border-violet-800/40 object-cover"
+              />
             </div>
           </section>
         )}
@@ -1068,8 +1111,25 @@ export default function App() {
           </section>
         )}
 
+        {tab === "maps" && <MapsSection />}
+
+        {tab === "hk" && (
+          <section className="rounded-xl border border-cyan-800/50 bg-panel p-4">
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4">
+              {hkBuildingEntries.map((item) => (
+                <img
+                  key={item.fileName}
+                  src={item.url}
+                  alt={item.alt || item.fileName}
+                  className="w-full rounded-lg border border-cyan-800/35 object-cover"
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense", "plants"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense", "plants", "maps", "mimic", "stamps", "hk"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">
