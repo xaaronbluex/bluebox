@@ -10,6 +10,8 @@ import PlanetSoloThree from "./components/PlanetSoloThree";
 import EarthGlobeMap from "./components/EarthGlobeMap";
 import MapsSection from "./components/MapsSection";
 import TowerDefenseGame from "./components/TowerDefenseGame";
+import GachaHeroLanding from "./components/GachaHeroLanding";
+import CrystalGlobeButton from "./components/CrystalGlobeButton";
 import { drawFromPool } from "./lib/gacha";
 import aiArtsFromFolder from "virtual:ai-arts";
 
@@ -78,19 +80,19 @@ function createInitialItemInventory() {
 }
 
 const tabs = [
-  { id: "machines", label: "Machines" },
-  { id: "colour", label: "Colour" },
-  { id: "chemical", label: "Elements" },
-  { id: "planets", label: "Planets" },
-  { id: "heart", label: "心經" },
-  { id: "plants", label: "Plants" },
-  { id: "mimic", label: "Mimic Insects" },
-  { id: "stamps", label: "Stamps" },
-  { id: "hk", label: "HK 3D Buildings" },
-  { id: "maps", label: "Maps" },
-  { id: "tower-defense", label: "3D Tower Defense" },
-  { id: "hero", label: "AI Arts" },
-  { id: "items", label: "Random Items" },
+  { id: "machines", label: "Machines", theme: "slate" },
+  { id: "colour", label: "Colour", theme: "rose" },
+  { id: "chemical", label: "Elements", theme: "amber" },
+  { id: "planets", label: "Planets", theme: "indigo" },
+  { id: "heart", label: "心經", theme: "gold" },
+  { id: "plants", label: "Plants", theme: "green" },
+  { id: "mimic", label: "Mimic Insects", theme: "lime" },
+  { id: "stamps", label: "Stamps", theme: "violet" },
+  { id: "hk", label: "HK 3D Buildings", theme: "cyan" },
+  { id: "maps", label: "Maps", theme: "teal" },
+  { id: "tower-defense", label: "3D Tower Defense", theme: "orange" },
+  { id: "hero", label: "AI Arts", theme: "fuchsia" },
+  { id: "items", label: "Random Items", theme: "sky" },
 ];
 
 const machineSlots = [
@@ -240,7 +242,44 @@ function FloatingMachine({ image, title, onClick }) {
   );
 }
 
+/** Portrait (or square): half row on large screens. Landscape: full row. */
+function AiArtGalleryItem({ item }) {
+  const [orientation, setOrientation] = useState("pending");
+
+  const caption =
+    item.id.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || item.id;
+
+  const handleImgLoad = useCallback((e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (!w || !h) return;
+    setOrientation(w > h ? "landscape" : "portrait");
+  }, []);
+
+  const isLandscape = orientation === "landscape";
+
+  return (
+    <article
+      className={
+        isLandscape
+          ? "w-full max-w-6xl justify-self-center lg:col-span-2"
+          : "w-full max-w-[520px] justify-self-center lg:col-span-1"
+      }
+    >
+      <div className="relative w-full overflow-visible">
+        <img
+          src={item.url}
+          alt={caption}
+          className={`mx-auto block h-auto ${isLandscape ? "w-full" : "w-[92%]"}`}
+          onLoad={handleImgLoad}
+        />
+      </div>
+      <p className="mt-3 text-center text-xs tracking-[0.08em] text-fuchsia-100/85">{caption}</p>
+    </article>
+  );
+}
+
 export default function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [tab, setTab] = useState("machines");
   const [colors, setColors] = useState(() => createColorDatabase());
   const [elements, setElements] = useState(() => createElementDatabase());
@@ -566,6 +605,21 @@ export default function App() {
     return { cells, rainbow };
   }, []);
 
+  if (showLanding) {
+    return (
+      <GachaHeroLanding
+        onNavigate={(tabId) => {
+          setShowLanding(false);
+          setTab(tabId);
+        }}
+        onEnter={() => {
+          setShowLanding(false);
+          setTab("machines");
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bunker px-4 py-6 text-emerald-50 sm:px-8">
       <div className="fixed right-4 top-4 z-50 flex gap-2">
@@ -591,21 +645,27 @@ export default function App() {
 
       <div className="mx-auto max-w-7xl text-center">
         <header className="mb-6 px-6 py-5 text-center">
-          <h1 className="text-3xl font-black tracking-[0.2em]">EARTH'S ARCHIVE</h1>
-          <p className="text-emerald-300">Gacha Diorama</p>
+          <h1 className="text-3xl font-black tracking-[0.2em]">EARTH&apos;S ARCHIVE</h1>
+          <CrystalGlobeButton
+            theme="sky"
+            label="Home"
+            size="home"
+            onClick={() => setShowLanding(true)}
+            className="!mt-4"
+          />
         </header>
 
-        <nav className="mb-6 grid grid-cols-2 gap-2 pb-1 sm:grid-cols-4 lg:grid-cols-7">
-          {tabs.map((item) => (
-            <button
+        <nav className="archive-tab-nav mb-6 grid grid-cols-2 gap-x-2 gap-y-4 pb-1 sm:grid-cols-4 lg:grid-cols-7">
+          {tabs.map((item, index) => (
+            <CrystalGlobeButton
               key={item.id}
+              theme={item.theme}
+              label={item.label}
+              size="tab"
+              active={tab === item.id}
               onClick={() => setTab(item.id)}
-              className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold ${
-                tab === item.id ? "bg-accent text-black" : "bg-panel text-emerald-200"
-              }`}
-            >
-              {item.label}
-            </button>
+              animationDelay={`${-index * 0.55}s`}
+            />
           ))}
         </nav>
 
@@ -1078,29 +1138,21 @@ export default function App() {
                 alt="Ocean stamp sheet — coral reef marine life"
                 className="mx-auto w-full rounded-lg border border-violet-800/40 object-cover"
               />
+              <img
+                src="/static/img/stamps/music_02.png"
+                alt="Music stamp sheet"
+                className="mx-auto w-full rounded-lg border border-violet-800/40 object-cover"
+              />
             </div>
           </section>
         )}
 
         {tab === "hero" && (
           <section className="p-2">
-            <div className="grid grid-cols-1 justify-items-center gap-10 lg:grid-cols-2">
-              {aiArtsFromFolder.map((item) => {
-                const caption = item.id
-                  .replace(/\.[^.]+$/, "")
-                  .replace(/[-_]+/g, " ")
-                  .trim();
-                return (
-                  <article key={`ai-arts-${item.id}`} className="w-full max-w-[520px]">
-                    <div className="relative w-full overflow-visible">
-                      <img src={item.url} alt={caption || item.id} className="mx-auto block h-auto w-[92%]" />
-                    </div>
-                    <p className="mt-3 text-center text-xs tracking-[0.08em] text-fuchsia-100/85">
-                      {caption || item.id}
-                    </p>
-                  </article>
-                );
-              })}
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+              {aiArtsFromFolder.map((item) => (
+                <AiArtGalleryItem key={`ai-arts-${item.id}`} item={item} />
+              ))}
             </div>
           </section>
         )}
