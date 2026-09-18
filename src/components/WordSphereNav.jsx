@@ -17,7 +17,7 @@ export const WORD_SPHERE_ITEMS = [
   { label: "Maps", tabId: "maps", color: "#2dd4bf" },
   { label: "AI Arts", tabId: "hero", color: "#e879f9" },
   { label: "HK Towers", tabId: "hk", color: "#22d3ee" },
-  { label: "Tower Defense", tabId: "tower-defense", color: "#fb923c" },
+  { label: "Siege Run", tabId: "tower-defense", color: "#fb923c" },
   { label: "Mimic Insects", tabId: "mimic", color: "#a3e635" },
 ];
 

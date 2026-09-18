@@ -90,7 +90,7 @@ const tabs = [
   { id: "stamps", label: "Stamps", theme: "violet" },
   { id: "hk", label: "HK 3D Buildings", theme: "cyan" },
   { id: "maps", label: "Maps", theme: "teal" },
-  { id: "tower-defense", label: "3D Tower Defense", theme: "orange" },
+  { id: "tower-defense", label: "Siege Run", theme: "orange" },
   { id: "hero", label: "AI Arts", theme: "fuchsia" },
   { id: "items", label: "Random Items", theme: "sky" },
 ];
@@ -279,8 +279,20 @@ function AiArtGalleryItem({ item }) {
 }
 
 export default function App() {
-  const [showLanding, setShowLanding] = useState(true);
-  const [tab, setTab] = useState("machines");
+  const [showLanding, setShowLanding] = useState(() => {
+    try {
+      return !new URLSearchParams(window.location.search).get("tab");
+    } catch {
+      return true;
+    }
+  });
+  const [tab, setTab] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("tab") || "machines";
+    } catch {
+      return "machines";
+    }
+  });
   const [colors, setColors] = useState(() => createColorDatabase());
   const [elements, setElements] = useState(() => createElementDatabase());
   const [planets, setPlanets] = useState(() => createPlanetDatabase());
