@@ -1,7 +1,7 @@
 /** Logical pixel canvas helpers — nearest-neighbour only. */
 
-export const LOGICAL_WIDTH = 320;
-export const LOGICAL_HEIGHT = 180;
+export const LOGICAL_WIDTH = 426;
+export const LOGICAL_HEIGHT = 240;
 export const DISPLAY_SCALE = 3;
 
 /**

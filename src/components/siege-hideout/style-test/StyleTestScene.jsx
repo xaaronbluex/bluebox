@@ -119,7 +119,7 @@ export default function StyleTestScene() {
         />
       </div>
       <p className="siege-style-test__hint">
-        Style test only — pale terrain, charcoal forms, selective brick-red. Not full combat.
+        Style test v2 — diorama plinth, stone castle, readable red-faction classes, fire FX. Not full combat.
       </p>
     </div>
   );

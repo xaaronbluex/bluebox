@@ -3,6 +3,7 @@
 .siege-hideout {
   --siege-pale: #d8d6ce;
   --siege-parchment: #e8deb5;
+  --siege-parchment-deep: #c9b889;
   --siege-mid: #8d8d87;
   --siege-charcoal: #1d2020;
   --siege-charcoal-mid: #4a4b49;
@@ -10,6 +11,11 @@
   --siege-red-dark: #6f2525;
   --siege-brass: #c69a43;
   --siege-player: #6b7a86;
+  --siege-stone: #a8adb3;
+  --siege-stone-blue: #7a8694;
+  --siege-earth: #6b5344;
+  --siege-grass: #5a6b4a;
+  --siege-fire: #e09a3a;
   --siege-canvas-scale: 3;
 
   color: var(--siege-pale);
@@ -137,8 +143,8 @@
 
 .siege-canvas {
   display: block;
-  width: min(100%, calc(320px * var(--siege-canvas-scale)));
-  aspect-ratio: 320 / 180;
+  width: min(100%, calc(426px * var(--siege-canvas-scale)));
+  aspect-ratio: 426 / 240;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
