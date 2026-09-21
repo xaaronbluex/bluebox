@@ -158,3 +158,61 @@
   font-size: 0.7rem;
   color: var(--siege-mid);
 }
+
+/* —— Siege Run combat shell —— */
+
+.siege-run__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.siege-run__stat {
+  color: var(--siege-pale);
+  letter-spacing: 0.02em;
+}
+
+.siege-run__phase {
+  color: var(--siege-brass);
+  text-transform: lowercase;
+}
+
+.siege-run__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.siege-run__btn {
+  appearance: none;
+  border: 1px solid var(--siege-charcoal-mid);
+  background: transparent;
+  color: var(--siege-pale);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.siege-run__btn:hover {
+  border-color: var(--siege-brass);
+  color: var(--siege-parchment);
+}
+
+.siege-run__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: var(--siege-mid);
+}
+
+.siege-canvas {
+  cursor: crosshair;
+  touch-action: none;
+}

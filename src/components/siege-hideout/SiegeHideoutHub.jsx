@@ -1,26 +1,28 @@
 import { useState } from "react";
 import "./theme.css";
 import StyleTestScene from "./style-test/StyleTestScene.jsx";
+import SiegeRun from "./siege/SiegeRun.jsx";
 
 const MODES = [
+  { id: "siege", label: "Siege Run", enabled: true },
   { id: "style-test", label: "Style Test", enabled: true },
-  { id: "siege", label: "Siege Run", enabled: false },
   { id: "hideout", label: "Hideout", enabled: false },
 ];
 
 /**
- * Hub for Siege Run + Hideout. Phase 1 defaults to Style Test;
- * full modes are stubs until later phases.
+ * Hub for Siege Run + Hideout. Phase 2: Siege Run playable; Hideout stub.
  */
 export default function SiegeHideoutHub() {
-  const [mode, setMode] = useState("style-test");
+  const [mode, setMode] = useState("siege");
 
   return (
     <div className="siege-hideout" data-siege-hub="true">
       <header className="siege-hideout__header">
         <div>
           <h2 className="siege-hideout__title">Siege Run</h2>
-          <p className="siege-hideout__subtitle">Hideout hub — Phase 1 style proof</p>
+          <p className="siege-hideout__subtitle">
+            Hideout hub — Phase 2 combat slice
+          </p>
         </div>
         <nav className="siege-hideout__modes" aria-label="Siege Hideout modes">
           {MODES.map((m) => (
@@ -38,13 +40,16 @@ export default function SiegeHideoutHub() {
         </nav>
       </header>
 
+      {mode === "siege" && (
+        <SiegeRun onExit={() => setMode("style-test")} />
+      )}
+
       {mode === "style-test" && <StyleTestScene />}
 
-      {mode === "siege" && (
-        <p className="siege-hideout__stub">Siege Run combat — not implemented yet (Phase 2).</p>
-      )}
       {mode === "hideout" && (
-        <p className="siege-hideout__stub">Hideout production — not implemented yet (Phase 3).</p>
+        <p className="siege-hideout__stub">
+          Hideout production — not implemented yet (Phase 3).
+        </p>
       )}
     </div>
   );
