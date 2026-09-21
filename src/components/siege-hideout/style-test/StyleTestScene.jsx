@@ -11,7 +11,7 @@ import {
 import { renderStyleTest } from "./styleTestRender.js";
 
 /**
- * Style-test visual proof — v5 parchment isometric bridge + campaign-map strip.
+ * Style-test visual proof — v6 parchment isometric bridge + campaign-map strip.
  */
 function readToggleParam(name, defaultOn = true) {
   try {
@@ -119,7 +119,7 @@ export default function StyleTestScene() {
         />
       </div>
       <p className="siege-style-test__hint">
-        Style test v5 — parchment isometric bridge (960×540), royal blue vs crimson, campaign-map strip. Original marks only.
+        Style test v6 — parchment isometric bridge (960×540), royal blue vs crimson, campaign-map strip. Original marks only.
       </p>
     </div>
   );
