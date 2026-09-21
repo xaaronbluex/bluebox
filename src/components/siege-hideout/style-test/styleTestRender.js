@@ -11,35 +11,48 @@ import {
 const W = LOGICAL_WIDTH;
 const H = LOGICAL_HEIGHT;
 
+/** Combat band ends above campaign-map strip. */
+const MAP_Y = 392;
+const COMBAT_H = MAP_Y;
+
 const ash = hexToRgb(PALETTE.paleAsh);
 const parchment = hexToRgb(PALETTE.parchment);
 const parchmentDeep = hexToRgb(PALETTE.parchmentDeep);
+const parchmentEdge = hexToRgb(PALETTE.parchmentEdge);
 const mid = hexToRgb(PALETTE.midGray);
 const charcoal = hexToRgb(PALETTE.charcoal);
 const charcoalMid = hexToRgb(PALETTE.charcoalMid);
 const red = hexToRgb(PALETTE.redSignal);
 const redDark = hexToRgb(PALETTE.redShadow);
+const crimson = hexToRgb(PALETTE.crimson);
 const brass = hexToRgb(PALETTE.brass);
 const player = hexToRgb(PALETTE.playerAccent);
 const navy = hexToRgb(PALETTE.navy);
 const navyDeep = hexToRgb(PALETTE.navyDeep);
 const navyMid = hexToRgb(PALETTE.navyMid);
+const royal = hexToRgb(PALETTE.royal);
+const royalLit = hexToRgb(PALETTE.royalLit);
 const stoneLight = hexToRgb(PALETTE.stoneLight);
 const stoneBlue = hexToRgb(PALETTE.stoneBlue);
+const slate = hexToRgb(PALETTE.slate);
+const slateDeep = hexToRgb(PALETTE.slateDeep);
+const cliff = hexToRgb(PALETTE.cliff);
+const cliffLit = hexToRgb(PALETTE.cliffLit);
 const earth = hexToRgb(PALETTE.earth);
 const earthDark = hexToRgb(PALETTE.earthDark);
 const grass = hexToRgb(PALETTE.grass);
 const moss = hexToRgb(PALETTE.moss);
+const pine = hexToRgb(PALETTE.pine);
 const wood = hexToRgb(PALETTE.wood);
 const woodLight = hexToRgb(PALETTE.woodLight);
 const woodDark = hexToRgb(PALETTE.woodDark);
+const tableWood = hexToRgb(PALETTE.tableWood);
+const tableLit = hexToRgb(PALETTE.tableLit);
+const skyHaze = hexToRgb(PALETTE.skyHaze);
+const mist = hexToRgb(PALETTE.mist);
 const fireHot = hexToRgb(PALETTE.fireHot);
 const fireMid = hexToRgb(PALETTE.fireMid);
 const fireCore = hexToRgb(PALETTE.fireCore);
-
-/** Ground line above thick diorama plinth (960×540). */
-const GROUND_Y = 333;
-const PLINTH_TOP = 387;
 
 function px(ctx, rgb, x, y) {
   ctx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
@@ -51,7 +64,7 @@ function fill(ctx, rgb, x, y, w, h) {
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
-/** Deterministic speck hash for dense pixel noise without Math.random shimmer. */
+/** Deterministic speck hash — no Math.random shimmer. */
 function hash2(x, y) {
   let n = (x * 374761393 + y * 668265263) | 0;
   n = (n ^ (n >>> 13)) * 1274126177;
@@ -65,7 +78,37 @@ function pickShade(x, y, a, b, c) {
   return a;
 }
 
-/** Dense stone face — many small blocks + mortar nicks (charcoal-weighted). */
+/** Paper grain flecks over a rect. */
+function paperGrain(ctx, x0, y0, w, h, intensity = 0.12) {
+  for (let y = y0; y < y0 + h; y++) {
+    for (let x = x0; x < x0 + w; x++) {
+      const hsh = hash2(x, y);
+      if (hsh < intensity * 0.35) px(ctx, parchmentDeep, x, y);
+      else if (hsh > 1 - intensity * 0.25) px(ctx, ash, x, y);
+    }
+  }
+}
+
+/** Weathered parchment margin — deckled edge feel (original, not traced). */
+function drawParchmentFrame(ctx) {
+  fill(ctx, parchmentEdge, 0, 0, W, H);
+  fill(ctx, parchment, 10, 8, W - 20, MAP_Y - 14);
+  paperGrain(ctx, 10, 8, W - 20, MAP_Y - 14, 0.1);
+  // Deckled nicks
+  for (let i = 0; i < 48; i++) {
+    const x = 8 + ((i * 37) % (W - 20));
+    const top = 4 + (hash2(x, 1) > 0.5 ? 1 : 0);
+    fill(ctx, parchmentEdge, x, top, 3 + (i % 3), 3);
+    const bot = MAP_Y - 8 + (hash2(x, 9) > 0.55 ? 1 : 0);
+    fill(ctx, parchmentEdge, x + 2, bot, 2 + (i % 2), 3);
+  }
+  for (let i = 0; i < 28; i++) {
+    const y = 12 + ((i * 41) % (MAP_Y - 24));
+    fill(ctx, parchmentEdge, 4 + (hash2(1, y) > 0.5 ? 1 : 0), y, 4, 2);
+    fill(ctx, parchmentEdge, W - 10, y + 1, 4, 2);
+  }
+}
+
 function drawDenseStoneRect(ctx, x0, y0, w, h, lit = true) {
   const blockW = 3;
   const blockH = 2;
@@ -79,415 +122,495 @@ function drawDenseStoneRect(ctx, x0, y0, w, h, lit = true) {
       const bw = Math.min(blockW - 1, x0 + w - x);
       const bh = Math.min(blockH, y0 + h - y);
       if (bw <= 0 || bh <= 0) continue;
-      // Bias dark — pale parchment needs charcoal masses (not washed stoneLight)
       const base = lit
-        ? pickShade(x, y, charcoalMid, stoneBlue, charcoal)
-        : pickShade(x, y, charcoal, charcoalMid, stoneBlue);
+        ? pickShade(x, y, stoneBlue, slate, charcoalMid)
+        : pickShade(x, y, slateDeep, charcoalMid, slate);
       fill(ctx, base, x, y, bw, bh);
-      fill(ctx, charcoal, x, y + bh - 1, bw, 1);
-      if (hash2(x + 3, y + 1) > 0.82) px(ctx, lit ? stoneBlue : charcoalMid, x, y);
-      if (hash2(x + 7, y) > 0.9) px(ctx, charcoal, x + Math.min(1, bw - 1), y);
+      fill(ctx, charcoalMid, x, y + bh - 1, bw, 1);
+      if (hash2(x + 3, y + 1) > 0.85) px(ctx, lit ? cliffLit : slate, x, y);
     }
   }
 }
 
-/** Fine wood grain — vertical fibres + knot flecks. */
 function drawWoodGrain(ctx, x, y, w, h) {
   fill(ctx, wood, x, y, w, h);
   for (let iy = 0; iy < h; iy++) {
     for (let ix = 0; ix < w; ix++) {
       const hsh = hash2(x + ix, y + iy);
-      if (ix === w - 1 || hsh < 0.08) {
-        px(ctx, woodDark, x + ix, y + iy);
-      } else if (iy % 3 === 0 && hsh < 0.45) {
-        px(ctx, woodLight, x + ix, y + iy);
-      } else if (hsh > 0.92) {
-        px(ctx, earthDark, x + ix, y + iy);
-      }
+      if (ix === w - 1 || hsh < 0.08) px(ctx, woodDark, x + ix, y + iy);
+      else if (iy % 3 === 0 && hsh < 0.45) px(ctx, woodLight, x + ix, y + iy);
+      else if (hsh > 0.92) px(ctx, earthDark, x + ix, y + iy);
     }
   }
 }
 
-/** Original geometric banner — navy + pale chevron (no crest copy). */
-function drawBanner(ctx, x, y, tall = 42) {
-  fill(ctx, navyDeep, x, y, 11, tall);
+/** Original diamond mark — not fleur / cross from refs. */
+function drawBlueBanner(ctx, x, y, tall = 28) {
+  fill(ctx, navyDeep, x, y, 9, tall);
   for (let iy = 1; iy < tall - 1; iy++) {
-    for (let ix = 1; ix < 10; ix++) {
-      const c = hash2(x + ix, y + iy) > 0.88 ? navyDeep : navy;
-      px(ctx, c, x + ix, y + iy);
+    for (let ix = 1; ix < 8; ix++) {
+      px(ctx, hash2(x + ix, y + iy) > 0.9 ? navyDeep : royal, x + ix, y + iy);
     }
   }
-  fill(ctx, navyMid, x + 2, y + 2, 7, 4);
-  fill(ctx, ash, x + 2, y + 10, 7, 2);
-  fill(ctx, ash, x + 3, y + 12, 5, 2);
-  fill(ctx, ash, x + 4, y + 14, 3, 2);
-  fill(ctx, ash, x + 5, y + 16, 1, 8);
-  fill(ctx, brass, x + 4, y + 5, 3, 1);
-  fill(ctx, charcoalMid, x + 10, y, 1, tall);
-  // Cloth edge fray
-  for (let i = 0; i < 4; i++) {
+  // Pale diamond
+  fill(ctx, ash, x + 4, y + 6, 1, 10);
+  fill(ctx, ash, x + 3, y + 8, 3, 6);
+  fill(ctx, ash, x + 2, y + 10, 5, 2);
+  fill(ctx, brass, x + 3, y + 3, 3, 1);
+  for (let i = 0; i < 3; i++) {
     if (hash2(x, y + tall - 1 - i) > 0.4) px(ctx, navyDeep, x + 2 + i * 2, y + tall - 1);
   }
 }
 
-function drawFlag(ctx, x, y) {
-  fill(ctx, woodDark, x, y, 2, 26);
-  for (let iy = 0; iy < 10; iy++) {
-    for (let ix = 0; ix < 14; ix++) {
-      px(ctx, hash2(x + ix, y + iy) > 0.9 ? navyDeep : navy, x + 2 + ix, y + iy);
+/** Original bar + ring mark — not skull / heraldic cross. */
+function drawRedBanner(ctx, x, y, tall = 28) {
+  fill(ctx, redDark, x, y, 9, tall);
+  for (let iy = 1; iy < tall - 1; iy++) {
+    for (let ix = 1; ix < 8; ix++) {
+      px(ctx, hash2(x + ix, y + iy) > 0.88 ? redDark : crimson, x + ix, y + iy);
     }
   }
-  fill(ctx, navyDeep, x + 2, y + 10, 12, 2);
-  fill(ctx, ash, x + 6, y + 3, 4, 4);
-  fill(ctx, brass, x, y - 1, 2, 2);
+  fill(ctx, ash, x + 2, y + 8, 5, 2);
+  fill(ctx, ash, x + 3, y + 12, 3, 3);
+  px(ctx, ash, x + 4, y + 11);
+  px(ctx, ash, x + 4, y + 15);
+  fill(ctx, brass, x + 3, y + 3, 3, 1);
 }
 
-function drawLantern(ctx, x, y) {
-  fill(ctx, woodDark, x + 1, y, 1, 5);
-  fill(ctx, brass, x, y + 5, 4, 5);
-  px(ctx, fireHot, x + 1, y + 6);
-  px(ctx, fireHot, x + 2, y + 7);
-  px(ctx, fireMid, x + 1, y + 8);
+function drawContactShadow(ctx, x, y, w = 10, h = 3) {
+  fillDitherRect(ctx, x, y, w, h, charcoalMid, mid, 0.55, 4);
 }
 
-function drawMoss(ctx, x, y, w = 8) {
-  for (let i = 0; i < w; i++) {
-    px(ctx, hash2(x + i, y) > 0.5 ? moss : grass, x + i, y);
-    if (hash2(x + i, y - 1) > 0.55) px(ctx, grass, x + i, y - 1);
-  }
-}
-
-function drawCastle(ctx) {
-  // Cliff under keep — dithered strata (BG language OK)
-  fillDitherRect(ctx, 0, GROUND_Y - 24, 210, 58, stoneBlue, charcoalMid, 0.5, 4);
-  fill(ctx, charcoalMid, 0, GROUND_Y + 8, 198, 30);
-  fillDitherRect(ctx, 4, GROUND_Y + 10, 186, 24, earth, charcoalMid, 0.46, 4);
-  drawMoss(ctx, 12, GROUND_Y + 6, 18);
-  drawMoss(ctx, 70, GROUND_Y + 7, 14);
-  drawMoss(ctx, 130, GROUND_Y + 5, 16);
-
-  const keepX = 12;
-  const keepY = 58;
-  const keepW = 144;
-  const keepH = GROUND_Y - keepY;
-  drawDenseStoneRect(ctx, keepX, keepY, keepW, keepH, true);
-  // Shadow plane on right of keep (hand pixels, not full-frame dither)
-  for (let y = keepY; y < GROUND_Y; y++) {
-    for (let x = keepX + keepW - 18; x < keepX + keepW; x++) {
-      if (hash2(x, y) < 0.55) px(ctx, stoneBlue, x, y);
+/** Soft isometric diamond tile (ground / bridge stone). */
+function drawIsoTile(ctx, cx, cy, hw, hh, top, left, right) {
+  // Top face
+  for (let dy = -hh; dy <= 0; dy++) {
+    const t = 1 - Math.abs(dy) / hh;
+    const half = Math.max(1, Math.floor(hw * t));
+    for (let dx = -half; dx <= half; dx++) {
+      px(ctx, top, cx + dx, cy + dy);
     }
   }
-
-  // Battlements — dense merlons
-  for (let i = 0; i < 16; i++) {
-    drawDenseStoneRect(ctx, keepX + 2 + i * 9, keepY - 14, 7, 15, i % 2 === 0);
-  }
-
-  // Round corner tower
-  drawDenseStoneRect(ctx, 132, 28, 56, GROUND_Y - 28, true);
-  for (let i = 0; i < 6; i++) {
-    drawDenseStoneRect(ctx, 134 + i * 9, 16, 8, 13, true);
-  }
-  // Conical wood roof
-  drawWoodGrain(ctx, 134, 8, 52, 10);
-  fill(ctx, woodLight, 148, 2, 22, 7);
-  fill(ctx, brass, 156, -2, 6, 5);
-  drawFlag(ctx, 158, -1);
-  drawLantern(ctx, 136, 36);
-  drawMoss(ctx, 140, GROUND_Y - 2, 12);
-
-  // Gatehouse — dense wood door
-  fill(ctx, charcoalMid, 52, GROUND_Y - 72, 48, 72);
-  drawWoodGrain(ctx, 55, GROUND_Y - 69, 42, 66);
-  fill(ctx, earthDark, 62, GROUND_Y - 62, 28, 56);
-  fill(ctx, woodDark, 74, GROUND_Y - 62, 5, 56);
-  // Door studs
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 2; col++) {
-      fill(ctx, brass, 66 + col * 16, GROUND_Y - 54 + row * 10, 2, 2);
+  // Left face
+  for (let dy = 0; dy < hh + 2; dy++) {
+    const shrink = Math.floor(dy * (hw / (hh + 4)));
+    for (let dx = -hw + shrink; dx <= -1; dx++) {
+      px(ctx, left, cx + dx, cy + dy);
     }
   }
-  // Arrow slits
-  fill(ctx, charcoal, 26, 100, 4, 14);
-  fill(ctx, charcoal, 104, 100, 4, 14);
-  fill(ctx, charcoal, 26, 148, 4, 14);
-  fill(ctx, charcoal, 104, 148, 4, 14);
-
-  // Sparse brass + player accent (no structure red)
-  fill(ctx, brass, 20, 108, 18, 2);
-  fill(ctx, brass, 88, 124, 22, 2);
-  fill(ctx, player, 28, 136, 9, 36);
-  fill(ctx, brass, 27, 134, 11, 3);
-
-  drawBanner(ctx, 40, 84, 48);
-  drawBanner(ctx, 100, 62, 40);
-  drawFlag(ctx, 72, 44);
-  drawLantern(ctx, 48, 84);
-
-  // Tiny defenders vs large keep (macro diorama scale)
-  drawDefender(ctx, 30, keepY - 4);
-  drawDefender(ctx, 70, keepY - 4);
-  drawDefender(ctx, 148, 34);
-
-  drawBallista(ctx, 176, GROUND_Y - 58);
-}
-
-/** Tiny multi-shade navy/blue-gray defender. */
-function drawDefender(ctx, x, y) {
-  // Helmet
-  fill(ctx, stoneLight, x + 2, y, 5, 5);
-  px(ctx, ash, x + 3, y);
-  px(ctx, charcoalMid, x + 6, y + 2);
-  // Body — multi-shade armor
-  fill(ctx, player, x + 2, y + 5, 6, 10);
-  px(ctx, navyMid, x + 3, y + 6);
-  px(ctx, navyMid, x + 4, y + 8);
-  px(ctx, navy, x + 5, y + 7);
-  fill(ctx, brass, x + 3, y + 7, 2, 1);
-  // Legs
-  fill(ctx, charcoal, x + 2, y + 15, 2, 4);
-  fill(ctx, charcoal, x + 5, y + 15, 2, 4);
-  // Pike
-  fill(ctx, wood, x + 8, y + 1, 1, 12);
-  px(ctx, mid, x + 8, y);
-  fill(ctx, mid, x + 9, y + 5, 3, 1);
-}
-
-function drawBallista(ctx, x, y) {
-  drawDenseStoneRect(ctx, x, y + 26, 48, 18, true);
-  drawWoodGrain(ctx, x + 3, y + 14, 42, 10);
-  fill(ctx, woodDark, x + 6, y + 36, 6, 16);
-  fill(ctx, woodDark, x + 34, y + 36, 6, 16);
-  drawWoodGrain(ctx, x + 12, y + 2, 24, 14);
-  // Bow arms
-  fill(ctx, earthDark, x + 2, y + 8, 12, 4);
-  fill(ctx, earthDark, x + 32, y + 8, 12, 4);
-  for (let i = 0; i < 10; i++) {
-    px(ctx, woodDark, x + 14 + i, y + 6 + ((i * 3) % 2));
-  }
-  fill(ctx, brass, x + 22, y + 1, 5, 5);
-  fill(ctx, fireHot, x + 38, y + 8, 14, 2);
-  fill(ctx, parchment, x + 50, y + 8, 8, 2);
-  drawBanner(ctx, x + 40, y - 12, 28);
-  drawLantern(ctx, x + 1, y + 6);
-  drawWoodGrain(ctx, x - 14, y + 30, 12, 10);
-  fill(ctx, mid, x - 12, y + 28, 2, 7);
-  fill(ctx, mid, x - 8, y + 27, 2, 8);
-}
-
-function drawHouse(ctx, x, y) {
-  drawWoodGrain(ctx, x, y + 20, 36, 28);
-  for (let iy = 0; iy < 22; iy++) {
-    for (let ix = 0; ix < 30; ix++) {
-      if (hash2(x + ix, y + iy) > 0.82) px(ctx, charcoalMid, x + 3 + ix, y + 22 + iy);
+  // Right face
+  for (let dy = 0; dy < hh + 2; dy++) {
+    const shrink = Math.floor(dy * (hw / (hh + 4)));
+    for (let dx = 1; dx <= hw - shrink; dx++) {
+      px(ctx, right, cx + dx, cy + dy);
     }
   }
-  drawWoodGrain(ctx, x - 3, y + 8, 42, 12);
-  fill(ctx, woodLight, x + 8, y + 2, 18, 8);
-  fill(ctx, earthDark, x + 14, y + 28, 8, 14);
-  fill(ctx, brass, x + 17, y + 34, 2, 2);
-  drawMoss(ctx, x + 4, y + 46, 12);
 }
 
-function drawTree(ctx, x, y) {
-  fill(ctx, earthDark, x + 6, y + 32, 4, 20);
-  // Dense pine needles — pixel clusters
+function drawPine(ctx, x, y, scale = 1) {
+  const s = scale;
+  fill(ctx, earthDark, x + Math.floor(2 * s), y + Math.floor(14 * s), Math.max(1, Math.floor(2 * s)), Math.floor(8 * s));
   const layers = [
-    { y: 24, w: 18, c: grass },
-    { y: 14, w: 16, c: charcoalMid },
-    { y: 6, w: 14, c: grass },
-    { y: -2, w: 12, c: moss },
-    { y: -10, w: 8, c: charcoal },
+    { oy: 10, w: 10, c: pine },
+    { oy: 5, w: 8, c: moss },
+    { oy: 1, w: 6, c: grass },
+    { oy: -3, w: 4, c: pine },
   ];
   for (const L of layers) {
-    const x0 = x + 8 - (L.w >> 1);
-    for (let iy = 0; iy < 10; iy++) {
-      for (let ix = 0; ix < L.w; ix++) {
-        if (hash2(x0 + ix, y + L.y + iy) > 0.28) px(ctx, L.c, x0 + ix, y + L.y + iy);
+    const ww = Math.floor(L.w * s);
+    const x0 = x + Math.floor(3 * s) - (ww >> 1);
+    const yy = y + Math.floor(L.oy * s);
+    for (let iy = 0; iy < Math.floor(6 * s); iy++) {
+      for (let ix = 0; ix < ww; ix++) {
+        if (hash2(x0 + ix, yy + iy) > 0.28) px(ctx, L.c, x0 + ix, yy + iy);
       }
     }
   }
 }
 
-function drawFlower(ctx, x, y) {
-  fill(ctx, grass, x, y + 4, 1, 6);
-  fill(ctx, parchment, x - 1, y, 3, 2);
-  px(ctx, brass, x, y);
+function drawCliffMass(ctx, x, y, w, h, soft = false) {
+  for (let iy = 0; iy < h; iy++) {
+    for (let ix = 0; ix < w; ix++) {
+      const edge = ix < 3 || ix > w - 4 || iy < 2;
+      const base = soft
+        ? pickShade(x + ix, y + iy, mist, cliff, slate)
+        : pickShade(x + ix, y + iy, cliffLit, cliff, slateDeep);
+      if (edge && hash2(x + ix, y + iy) > 0.4) px(ctx, soft ? mist : slate, x + ix, y + iy);
+      else px(ctx, base, x + ix, y + iy);
+    }
+  }
+  // Grass lip
+  for (let ix = 2; ix < w - 2; ix += 2) {
+    if (hash2(x + ix, y) > 0.35) px(ctx, grass, x + ix, y);
+    if (hash2(x + ix, y - 1) > 0.6) px(ctx, moss, x + ix, y - 1);
+  }
 }
 
-function drawGrassTuft(ctx, x, y) {
-  px(ctx, grass, x, y);
-  px(ctx, moss, x, y + 1);
-  px(ctx, grass, x, y + 2);
-  px(ctx, moss, x + 2, y - 1);
-  px(ctx, grass, x + 2, y);
-  px(ctx, grass, x + 2, y + 1);
-  px(ctx, grass, x + 4, y);
-  px(ctx, moss, x + 4, y + 1);
+/** Chibi-ish dense defender — royal blue tunic, silver helm. */
+function drawIsoDefender(ctx, x, y) {
+  drawContactShadow(ctx, x + 1, y + 16, 10, 3);
+  fill(ctx, stoneLight, x + 3, y, 5, 5);
+  px(ctx, ash, x + 4, y);
+  px(ctx, charcoalMid, x + 7, y + 2);
+  fill(ctx, royal, x + 2, y + 5, 7, 8);
+  px(ctx, royalLit, x + 3, y + 6);
+  px(ctx, navy, x + 6, y + 7);
+  fill(ctx, brass, x + 4, y + 8, 2, 1);
+  fill(ctx, charcoal, x + 3, y + 13, 2, 4);
+  fill(ctx, charcoal, x + 6, y + 13, 2, 4);
+  fill(ctx, wood, x + 9, y + 2, 1, 10);
+  px(ctx, mid, x + 9, y + 1);
 }
 
-/**
- * Tiny red-faction class silhouettes — multi-shade armor (original placeholders).
- * variant: 0 spear, 1 scout, 2 crossbow, 3 tower-shield, 4 ram-brute
- */
-function drawEnemy(ctx, x, y, variant = 0) {
-  fillDitherRect(ctx, x + 1, y + 36, 14, 4, mid, ash, 0.5, 4);
-
-  if (variant === 4) {
-    fill(ctx, redDark, x, y + 6, 22, 28);
-    for (let iy = 0; iy < 22; iy++) {
-      for (let ix = 0; ix < 16; ix++) {
-        const c = hash2(x + ix, y + iy) > 0.65 ? redDark : red;
-        px(ctx, c, x + 3 + ix, y + 8 + iy);
-      }
-    }
-    fill(ctx, stoneBlue, x + 6, y - 2, 10, 10);
-    fill(ctx, brass, x + 7, y + 1, 6, 2);
-    drawWoodGrain(ctx, x - 18, y + 12, 20, 7);
-    fill(ctx, earthDark, x - 22, y + 13, 6, 5);
-    fill(ctx, charcoal, x + 3, y + 34, 5, 5);
-    fill(ctx, charcoal, x + 12, y + 34, 5, 5);
-    return;
-  }
-
-  if (variant === 3) {
-    fill(ctx, charcoal, x + 5, y + 8, 9, 20);
-    fill(ctx, stoneBlue, x + 5, y, 8, 9);
-    for (let i = 0; i < 12; i++) {
-      px(ctx, red, x + 6 + (i % 5), y + 10 + (i >> 2) * 3);
-      px(ctx, redDark, x + 7 + (i % 4), y + 11 + (i >> 2) * 3);
-    }
-    fill(ctx, red, x - 3, y + 2, 9, 26);
-    fill(ctx, brass, x - 1, y + 7, 5, 2);
-    fill(ctx, brass, x, y + 12, 3, 8);
-    fill(ctx, charcoal, x + 5, y + 28, 3, 6);
-    fill(ctx, charcoal, x + 10, y + 28, 3, 6);
-    return;
-  }
-
+/** Compact red grunt — original silhouette. */
+function drawIsoGrunt(ctx, x, y, variant = 0) {
+  drawContactShadow(ctx, x + 1, y + 16, 11, 3);
   if (variant === 2) {
-    fill(ctx, charcoal, x + 5, y + 9, 9, 17);
-    fill(ctx, red, x + 4, y + 10, 8, 10);
-    fill(ctx, redDark, x + 4, y, 8, 9);
-    drawWoodGrain(ctx, x + 13, y + 10, 14, 3);
-    fill(ctx, wood, x + 16, y + 6, 3, 11);
-    fill(ctx, parchment, x + 26, y + 10, 5, 2);
-    fill(ctx, charcoal, x + 4, y + 26, 3, 6);
-    fill(ctx, charcoal, x + 10, y + 26, 3, 6);
+    // Brute — larger but not copied boss design
+    fill(ctx, redDark, x, y + 2, 14, 14);
+    for (let iy = 0; iy < 10; iy++) {
+      for (let ix = 0; ix < 10; ix++) {
+        px(ctx, hash2(x + ix, y + iy) > 0.55 ? redDark : red, x + 2 + ix, y + 4 + iy);
+      }
+    }
+    fill(ctx, slate, x + 4, y - 2, 7, 6);
+    fill(ctx, brass, x + 5, y, 4, 1);
+    fill(ctx, woodDark, x - 6, y + 6, 8, 4);
+    fill(ctx, charcoal, x + 2, y + 16, 3, 4);
+    fill(ctx, charcoal, x + 8, y + 16, 3, 4);
     return;
   }
-
-  if (variant === 1) {
-    fill(ctx, redDark, x + 1, y + 15, 13, 12);
-    fill(ctx, red, x + 2, y + 16, 11, 9);
-    fill(ctx, charcoal, x + 4, y + 7, 8, 9);
-    fill(ctx, redDark, x + 3, y + 2, 9, 6);
-    fill(ctx, mid, x + 14, y + 17, 7, 2);
-    fill(ctx, charcoal, x + 2, y + 27, 4, 6);
-    fill(ctx, charcoal, x + 9, y + 26, 4, 7);
-    return;
-  }
-
-  // Spearman — multi-shade tunic + helm
-  fill(ctx, charcoal, x + 5, y + 8, 8, 18);
-  for (let iy = 0; iy < 12; iy++) {
-    for (let ix = 0; ix < 7; ix++) {
-      px(ctx, hash2(x + ix, y + iy) > 0.55 ? redDark : red, x + 4 + ix, y + 10 + iy);
+  fill(ctx, charcoal, x + 3, y + 6, 7, 10);
+  for (let iy = 0; iy < 8; iy++) {
+    for (let ix = 0; ix < 6; ix++) {
+      px(ctx, hash2(x + ix, y + iy) > 0.5 ? redDark : crimson, x + 3 + ix, y + 7 + iy);
     }
   }
-  fill(ctx, stoneBlue, x + 5, y, 7, 8);
-  px(ctx, ash, x + 6, y);
-  fill(ctx, brass, x + 6, y + 2, 4, 2);
-  fill(ctx, red, x - 2, y + 10, 6, 10);
-  fill(ctx, brass, x - 1, y + 12, 3, 3);
-  fill(ctx, mid, x + 13, y - 12, 1, 28);
-  fill(ctx, stoneLight, x + 11, y - 15, 5, 5);
-  fill(ctx, charcoal, x + 4, y + 26, 3, 6);
-  fill(ctx, charcoal, x + 10, y + 26, 3, 6);
-}
-
-function drawProjectile(ctx, x, y, kind = "bolt") {
-  if (kind === "arrow") {
-    fill(ctx, parchment, x, y, 10, 1);
-    px(ctx, mid, x - 2, y);
-    px(ctx, mid, x + 10, y);
-    return;
+  fill(ctx, slate, x + 3, y, 6, 6);
+  px(ctx, ash, x + 4, y);
+  if (variant === 1) {
+    fill(ctx, wood, x + 10, y + 4, 8, 2);
+    fill(ctx, woodDark, x + 12, y + 2, 2, 6);
+  } else {
+    fill(ctx, red, x - 1, y + 7, 4, 7);
+    fill(ctx, brass, x, y + 9, 2, 2);
+    fill(ctx, mid, x + 10, y - 4, 1, 14);
   }
-  fill(ctx, fireHot, x, y, 10, 2);
-  fill(ctx, parchment, x + 9, y, 7, 2);
-  fill(ctx, fireMid, x - 8, y, 7, 2);
-  fill(ctx, fireCore, x - 13, y, 4, 2);
-  fill(ctx, ash, x - 18, y, 4, 1);
+  fill(ctx, charcoal, x + 3, y + 16, 2, 3);
+  fill(ctx, charcoal, x + 7, y + 16, 2, 3);
 }
 
-function drawHitFx(ctx, x, y, t) {
-  const pulse = Math.sin(t * 8) > 0 ? 0 : 1;
-  fill(ctx, fireHot, x + pulse, y - 4, 7, 7);
-  fill(ctx, fireMid, x - 5, y - 1, 8, 6);
-  fill(ctx, fireCore, x + 2, y + 2, 6, 5);
-  fill(ctx, parchment, x + 1, y - 2, 3, 3);
-  px(ctx, fireHot, x - 9, y - 6);
-  px(ctx, fireMid, x + 12, y - 5);
-  px(ctx, fireCore, x + 11, y + 6);
-  px(ctx, fireHot, x - 6, y + 8);
-  fill(ctx, charcoal, x - 2, y + 9, 3, 3);
-  // Selective brick-red danger only
-  fill(ctx, red, x + 5, y + 7, 3, 2);
-  fill(ctx, redDark, x - 4, y + 6, 2, 2);
+function drawIsoArcher(ctx, x, y) {
+  drawContactShadow(ctx, x + 1, y + 14, 9, 3);
+  fill(ctx, royal, x + 2, y + 4, 6, 8);
+  fill(ctx, stoneLight, x + 3, y, 4, 4);
+  fill(ctx, wood, x + 8, y + 2, 1, 10);
+  fill(ctx, parchment, x + 9, y + 5, 5, 1);
+  fill(ctx, charcoal, x + 2, y + 12, 2, 3);
+  fill(ctx, charcoal, x + 5, y + 12, 2, 3);
 }
 
-/** Atmosphere / terrain only — dither is the shading language here. */
-function drawTerrain(ctx) {
-  fill(ctx, parchment, 0, 0, W, H);
-  fillDitherRect(ctx, 0, 0, W, 190, parchment, parchmentDeep, 0.28, 8);
-  fillDitherRect(ctx, 0, 100, W, 120, parchment, ash, 0.16, 8);
-
-  // Distant mountains — soft print stipple
-  fillDitherRect(ctx, 390, 120, 540, 120, parchmentDeep, mid, 0.52, 8);
-  fillDitherRect(ctx, 480, 90, 400, 90, mid, parchmentDeep, 0.4, 8);
-  fillDitherRect(ctx, 600, 70, 300, 70, mid, ash, 0.48, 8);
-  fill(ctx, mid, 760, 85, 20, 36);
-  fill(ctx, mid, 766, 74, 10, 16);
-  fillDitherRect(ctx, 430, 210, 480, 60, ash, parchmentDeep, 0.3, 8);
-
-  // Near ground mottling
-  fillDitherRect(ctx, 0, GROUND_Y - 50, W, 100, ash, parchment, 0.2, 8);
-  fillDitherRect(ctx, 240, GROUND_Y - 16, 620, 32, ash, grass, 0.1, 8);
+function drawBolt(ctx, x, y) {
+  fill(ctx, parchment, x, y, 9, 1);
+  px(ctx, mid, x - 1, y);
+  px(ctx, fireHot, x + 9, y);
 }
 
-function drawPath(ctx) {
-  fillDitherRect(ctx, 220, GROUND_Y - 4, 680, 28, mid, earth, 0.36, 8);
-  fillDitherRect(ctx, 210, GROUND_Y + 10, 360, 18, earth, charcoalMid, 0.3, 8);
+function drawHitSpark(ctx, x, y, t) {
+  const pulse = Math.sin(t * 9) > 0 ? 0 : 1;
+  fill(ctx, fireHot, x + pulse, y - 2, 5, 5);
+  fill(ctx, fireMid, x - 3, y, 5, 4);
+  fill(ctx, fireCore, x + 1, y + 2, 4, 3);
+  fill(ctx, red, x + 4, y + 4, 2, 2);
 }
 
-function drawPlinth(ctx) {
-  const depth = H - PLINTH_TOP;
-  fill(ctx, earth, 0, PLINTH_TOP, W, depth);
-  fillDitherRect(ctx, 0, PLINTH_TOP, W, 24, earth, earthDark, 0.52, 8);
-  fillDitherRect(ctx, 0, PLINTH_TOP + 24, W, depth - 34, earthDark, charcoalMid, 0.46, 8);
-  fillDitherRect(ctx, 0, H - 28, W, 20, charcoalMid, charcoal, 0.42, 8);
-  fill(ctx, charcoal, 0, H - 8, W, 8);
-  for (let i = 0; i < 24; i++) {
-    fill(ctx, charcoalMid, 16 + i * 40, PLINTH_TOP + 32 + (i % 3) * 10, 32, 2);
-    fill(ctx, earth, 32 + i * 40, PLINTH_TOP + 52 + (i % 2) * 8, 24, 2);
+function drawLeftKeep(ctx) {
+  // Cliff shelf
+  drawCliffMass(ctx, 24, 210, 170, 95, false);
+  fillDitherRect(ctx, 30, 300, 160, 40, earth, earthDark, 0.4, 4);
+
+  // Gatehouse body (slight iso lean — left mass)
+  drawDenseStoneRect(ctx, 48, 118, 110, 100, true);
+  for (let i = 0; i < 10; i++) {
+    drawDenseStoneRect(ctx, 50 + i * 11, 104, 8, 16, i % 2 === 0);
   }
-  for (let x = 6; x < W - 6; x += 6) {
-    if (x < 220 || x > 250) drawGrassTuft(ctx, x, PLINTH_TOP - 6);
+  // Side tower
+  drawDenseStoneRect(ctx, 138, 88, 42, 130, true);
+  for (let i = 0; i < 4; i++) {
+    drawDenseStoneRect(ctx, 140 + i * 10, 74, 8, 15, true);
   }
+  drawWoodGrain(ctx, 140, 66, 38, 10);
+  fill(ctx, brass, 156, 62, 4, 4);
+
+  // Portcullis / gate — wood bars (original)
+  fill(ctx, charcoalMid, 78, 168, 42, 50);
+  drawWoodGrain(ctx, 80, 170, 38, 46);
+  for (let i = 0; i < 5; i++) {
+    fill(ctx, woodDark, 84 + i * 7, 172, 2, 42);
+  }
+  fill(ctx, brass, 96, 190, 4, 4);
+
+  drawBlueBanner(ctx, 66, 126, 34);
+  drawBlueBanner(ctx, 118, 112, 30);
+  fill(ctx, woodDark, 152, 70, 2, 18);
+  for (let iy = 0; iy < 8; iy++) {
+    for (let ix = 0; ix < 12; ix++) {
+      px(ctx, hash2(152 + ix, 70 + iy) > 0.9 ? navyDeep : royal, 154 + ix, 70 + iy);
+    }
+  }
+  // Diamond pip on flag
+  fill(ctx, ash, 158, 72, 3, 3);
+
+  drawIsoArcher(ctx, 70, 110);
+  drawIsoArcher(ctx, 108, 108);
+  drawIsoDefender(ctx, 88, 196);
+  drawIsoDefender(ctx, 120, 200);
+  drawPine(ctx, 18, 240, 1.1);
+  drawPine(ctx, 4, 268, 0.9);
+}
+
+function drawRightKeep(ctx) {
+  drawCliffMass(ctx, 760, 200, 170, 100, false);
+  fillDitherRect(ctx, 770, 295, 150, 42, earth, charcoalMid, 0.42, 4);
+
+  drawDenseStoneRect(ctx, 790, 100, 90, 120, false);
+  for (let i = 0; i < 8; i++) {
+    drawDenseStoneRect(ctx, 792 + i * 11, 86, 8, 15, i % 2 === 0);
+  }
+  drawDenseStoneRect(ctx, 860, 70, 48, 150, false);
+  for (let i = 0; i < 4; i++) {
+    drawDenseStoneRect(ctx, 862 + i * 11, 56, 9, 15, true);
+  }
+  drawWoodGrain(ctx, 862, 48, 44, 10);
+
+  drawRedBanner(ctx, 808, 108, 32);
+  drawRedBanner(ctx, 848, 92, 28);
+  fill(ctx, woodDark, 880, 52, 2, 16);
+  for (let iy = 0; iy < 8; iy++) {
+    for (let ix = 0; ix < 12; ix++) {
+      px(ctx, hash2(880 + ix, 52 + iy) > 0.88 ? redDark : crimson, 882 + ix, 52 + iy);
+    }
+  }
+  fill(ctx, ash, 885, 54, 5, 2);
+
+  drawIsoGrunt(ctx, 820, 198, 0);
+  drawIsoGrunt(ctx, 848, 204, 1);
+  drawPine(ctx, 920, 250, 1);
+  drawPine(ctx, 900, 280, 0.85);
+}
+
+function drawBridge(ctx, t) {
+  // Chasm void
+  fillDitherRect(ctx, 280, 220, 400, 120, charcoalMid, charcoal, 0.55, 8);
+  fillDitherRect(ctx, 300, 250, 360, 80, charcoal, slateDeep, 0.4, 8);
+  // Mist in gorge
+  fillDitherRect(ctx, 320, 280, 320, 40, mist, charcoalMid, 0.25, 8);
+
+  // Stone arch suggestion
+  for (let i = 0; i < 14; i++) {
+    const x = 300 + i * 26;
+    const dip = Math.abs(i - 6.5) * 3;
+    drawIsoTile(
+      ctx,
+      x,
+      248 + dip,
+      14,
+      7,
+      pickShade(x, 248, stoneLight, stoneBlue, slate),
+      slate,
+      slateDeep
+    );
+  }
+  // Deck planks / stones on top
+  for (let i = 0; i < 18; i++) {
+    const x = 290 + i * 20;
+    const y = 236 + Math.sin(i * 0.4) * 2;
+    drawDenseStoneRect(ctx, x, y, 18, 10, i % 2 === 0);
+    fill(ctx, charcoalMid, x, y + 9, 18, 1);
+  }
+  // Rail posts
+  for (let i = 0; i < 10; i++) {
+    const x = 310 + i * 36;
+    fill(ctx, woodDark, x, 228, 2, 12);
+    fill(ctx, wood, x - 4, 228, 10, 2);
+  }
+
+  // Combatants on bridge — blue left / red right
+  drawIsoDefender(ctx, 340, 218);
+  drawIsoDefender(ctx, 372, 220);
+  drawIsoDefender(ctx, 400, 216);
+  drawIsoArcher(ctx, 318, 212);
+
+  drawIsoGrunt(ctx, 520, 218, 0);
+  drawIsoGrunt(ctx, 548, 220, 1);
+  drawIsoGrunt(ctx, 576, 216, 0);
+  drawIsoGrunt(ctx, 608, 214, 2);
+
+  const boltX = 420 + ((t * 70) % 120);
+  drawBolt(ctx, boltX, 210);
+  drawBolt(ctx, boltX - 28, 206);
+  drawHitSpark(ctx, 510, 208, t);
+}
+
+function drawBackground(ctx) {
+  // Soft distant haze mountains (lower info — DoF will soften further)
+  fillDitherRect(ctx, 200, 40, 560, 100, skyHaze, mist, 0.35, 8);
+  fillDitherRect(ctx, 260, 70, 200, 70, mist, cliff, 0.4, 8);
+  fillDitherRect(ctx, 520, 60, 220, 80, cliff, mist, 0.38, 8);
+  // Far pines
+  drawPine(ctx, 240, 120, 0.7);
+  drawPine(ctx, 270, 128, 0.55);
+  drawPine(ctx, 640, 110, 0.65);
+  drawPine(ctx, 680, 118, 0.5);
+  // Soft waterfall suggestion (right-of-center gorge wall)
+  fillDitherRect(ctx, 470, 100, 14, 110, ash, mist, 0.5, 4);
+  fillDitherRect(ctx, 484, 110, 8, 90, mist, ash, 0.4, 4);
 }
 
 function drawMiniHud(ctx) {
-  fill(ctx, charcoal, 14, 8, 96, 12);
-  fill(ctx, red, 16, 9, 68, 10);
-  fill(ctx, charcoal, W - 118, 8, 104, 12);
-  fill(ctx, brass, W - 116, 9, 28, 10);
-  fill(ctx, mid, W - 86, 9, 28, 10);
-  fill(ctx, mid, W - 56, 9, 28, 10);
+  fill(ctx, charcoal, 18, 14, 88, 10);
+  fill(ctx, red, 20, 15, 60, 8);
+  fill(ctx, charcoal, W - 120, 14, 100, 10);
+  fill(ctx, brass, W - 118, 15, 26, 8);
+  fill(ctx, mid, W - 90, 15, 26, 8);
+  fill(ctx, royal, W - 62, 15, 26, 8);
+}
+
+/** Campaign map strip — wooden table + parchment path stub (original icons). */
+function drawMapStrip(ctx) {
+  fill(ctx, tableWood, 0, MAP_Y, W, H - MAP_Y);
+  for (let y = MAP_Y; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const hsh = hash2(x, y);
+      if (hsh < 0.06) px(ctx, tableLit, x, y);
+      else if (hsh > 0.94) px(ctx, charcoal, x, y);
+      else if (x % 37 === 0) px(ctx, earthDark, x, y);
+    }
+  }
+
+  // Parchment sheet on table
+  const mx = 70;
+  const my = MAP_Y + 10;
+  const mw = W - 140;
+  const mh = H - MAP_Y - 18;
+  fill(ctx, parchmentDeep, mx - 2, my - 2, mw + 4, mh + 4);
+  fill(ctx, parchment, mx, my, mw, mh);
+  paperGrain(ctx, mx, my, mw, mh, 0.14);
+  // Deckled edge of map sheet
+  for (let i = 0; i < 40; i++) {
+    const x = mx + ((i * 29) % mw);
+    if (hash2(x, my) > 0.5) fill(ctx, parchmentEdge, x, my - 1, 2, 2);
+    if (hash2(x, my + mh) > 0.45) fill(ctx, parchmentEdge, x, my + mh - 1, 2, 2);
+  }
+
+  // Hand-drawn mountain / tree sketches (negative space fillers)
+  fillDitherRect(ctx, mx + 40, my + 18, 90, 28, parchmentDeep, mid, 0.35, 4);
+  fillDitherRect(ctx, mx + mw - 140, my + 22, 80, 24, parchmentDeep, mid, 0.32, 4);
+  for (let i = 0; i < 6; i++) {
+    drawPine(ctx, mx + 60 + i * 110, my + 55, 0.45);
+  }
+
+  // Dotted campaign path + original location nodes
+  const nodes = [
+    { x: mx + 50, y: my + 70, kind: "keep", faction: "blue" },
+    { x: mx + 150, y: my + 55, kind: "grove", faction: "blue" },
+    { x: mx + 250, y: my + 75, kind: "hut", faction: "neutral" },
+    { x: mx + 360, y: my + 50, kind: "bridge", faction: "blue" },
+    { x: mx + 470, y: my + 70, kind: "village", faction: "red" },
+    { x: mx + 580, y: my + 48, kind: "mine", faction: "red" },
+    { x: mx + 690, y: my + 68, kind: "fort", faction: "red" },
+  ];
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const a = nodes[i];
+    const b = nodes[i + 1];
+    const steps = 12;
+    for (let s = 0; s < steps; s++) {
+      const u = s / steps;
+      const x = Math.round(a.x + (b.x - a.x) * u);
+      const y = Math.round(a.y + (b.y - a.y) * u);
+      if (s % 2 === 0) fill(ctx, charcoal, x, y, 2, 2);
+    }
+  }
+  for (const n of nodes) {
+    drawMapNode(ctx, n.x, n.y, n.kind, n.faction);
+  }
+
+  // Original table props — compass, coins, scroll, cloth scraps
+  drawCompass(ctx, 18, H - 42);
+  drawCoins(ctx, 48, H - 28);
+  drawScroll(ctx, 22, MAP_Y + 16);
+  drawClothScrap(ctx, W - 58, H - 48, royal);
+  drawClothScrap(ctx, W - 40, H - 36, crimson);
+}
+
+function drawMapNode(ctx, x, y, kind, faction) {
+  drawContactShadow(ctx, x - 4, y + 10, 12, 3);
+  if (kind === "keep" || kind === "fort") {
+    drawDenseStoneRect(ctx, x - 5, y - 8, 12, 14, faction === "blue");
+    fill(ctx, woodDark, x - 4, y - 12, 10, 4);
+  } else if (kind === "grove") {
+    drawPine(ctx, x - 4, y - 10, 0.55);
+  } else if (kind === "hut") {
+    drawWoodGrain(ctx, x - 6, y - 2, 12, 10);
+    fill(ctx, woodLight, x - 7, y - 8, 14, 6);
+  } else if (kind === "bridge") {
+    fill(ctx, slate, x - 8, y + 2, 16, 4);
+    fill(ctx, stoneBlue, x - 6, y - 2, 12, 4);
+  } else if (kind === "village") {
+    drawWoodGrain(ctx, x - 8, y, 8, 8);
+    drawWoodGrain(ctx, x + 1, y - 2, 8, 10);
+    fill(ctx, woodLight, x - 9, y - 5, 10, 5);
+  } else if (kind === "mine") {
+    fill(ctx, charcoalMid, x - 6, y, 12, 8);
+    fill(ctx, charcoal, x - 2, y + 2, 5, 5);
+    fill(ctx, brass, x + 4, y - 2, 3, 3);
+  }
+  // Status ribbon — geometric only
+  if (faction === "blue") {
+    fill(ctx, royal, x - 3, y - 18, 7, 8);
+    fill(ctx, ash, x - 1, y - 16, 3, 3);
+  } else if (faction === "red") {
+    fill(ctx, crimson, x - 3, y - 18, 7, 8);
+    fill(ctx, ash, x - 2, y - 15, 5, 2);
+  }
+}
+
+function drawCompass(ctx, x, y) {
+  fill(ctx, brass, x, y, 22, 22);
+  fill(ctx, parchment, x + 3, y + 3, 16, 16);
+  fill(ctx, charcoal, x + 10, y + 4, 2, 14);
+  fill(ctx, charcoal, x + 4, y + 10, 14, 2);
+  fill(ctx, red, x + 10, y + 5, 2, 6);
+  fill(ctx, navy, x + 10, y + 11, 2, 5);
+}
+
+function drawCoins(ctx, x, y) {
+  for (let i = 0; i < 4; i++) {
+    fill(ctx, brass, x + i * 5, y + (i % 2), 6, 5);
+    px(ctx, fireHot, x + 2 + i * 5, y + 1 + (i % 2));
+  }
+}
+
+function drawScroll(ctx, x, y) {
+  fill(ctx, parchmentDeep, x, y, 28, 10);
+  fill(ctx, parchment, x + 1, y + 1, 26, 8);
+  fill(ctx, royal, x + 10, y + 3, 14, 4);
+  fill(ctx, navyDeep, x + 12, y + 4, 10, 2);
+}
+
+function drawClothScrap(ctx, x, y, rgb) {
+  fill(ctx, rgb, x, y, 18, 22);
+  for (let iy = 0; iy < 20; iy++) {
+    for (let ix = 0; ix < 16; ix++) {
+      if (hash2(x + ix, y + iy) > 0.92) px(ctx, ash, x + 1 + ix, y + 1 + iy);
+    }
+  }
+  fill(ctx, ash, x + 6, y + 6, 5, 5);
 }
 
 /**
- * Draw style-test still: dither only on terrain/shadows/BG;
- * castle / units / projectiles stay cleaner so dense detail reads.
+ * v5 isometric parchment combat + campaign-map strip.
+ * Dither on atmosphere only; keeps / units stay clean for readability.
  */
 export function renderStyleTest({
   sceneCtx,
@@ -505,56 +628,27 @@ export function renderStyleTest({
   disableSmoothing(outCtx);
   disableSmoothing(scratchCtx);
 
-  // --- Layer A: atmosphere / ground (may receive print dither) ---
-  drawTerrain(sceneCtx);
-  drawPath(sceneCtx);
-  drawPlinth(sceneCtx);
+  // --- Layer A: parchment + soft BG (may receive print dither) ---
+  sceneCtx.clearRect(0, 0, W, H);
+  drawParchmentFrame(sceneCtx);
+  drawBackground(sceneCtx);
+  // Soft ground wash under bridge
+  fillDitherRect(sceneCtx, 200, 300, 560, 70, parchmentDeep, earth, 0.18, 8);
 
   outCtx.clearRect(0, 0, W, H);
   outCtx.drawImage(sceneCanvas, 0, 0);
 
   if (halftone) {
-    // Restrained: light Bayer-8 on BG only — not a heavy full-screen mesh
-    applyOrderedDither(outCtx, W, H, { strength: 0.28, matrix: "8" });
+    applyOrderedDither(outCtx, W, H, { strength: 0.22, matrix: "8" });
   }
 
-  // --- Layer B: clean dense sprites over dithered BG (no full-frame mesh) ---
+  // --- Layer B: clean isometric subjects ---
   sceneCtx.clearRect(0, 0, W, H);
-
-  drawCastle(sceneCtx);
-  drawHouse(sceneCtx, 252, GROUND_Y - 48);
-  drawHouse(sceneCtx, 310, GROUND_Y - 40);
-  drawTree(sceneCtx, 380, GROUND_Y - 52);
-  drawTree(sceneCtx, 690, GROUND_Y - 64);
-  drawTree(sceneCtx, 860, GROUND_Y - 56);
-
-  drawGrassTuft(sceneCtx, 240, GROUND_Y - 6);
-  drawGrassTuft(sceneCtx, 450, GROUND_Y - 5);
-  drawGrassTuft(sceneCtx, 555, GROUND_Y - 7);
-  drawFlower(sceneCtx, 468, GROUND_Y - 10);
-  drawFlower(sceneCtx, 572, GROUND_Y - 11);
-  drawFlower(sceneCtx, 286, GROUND_Y - 9);
-
-  const enemies = [
-    { x: 510, y: GROUND_Y - 36, v: 0 },
-    { x: 552, y: GROUND_Y - 34, v: 1 },
-    { x: 588, y: GROUND_Y - 36, v: 2 },
-    { x: 630, y: GROUND_Y - 36, v: 3 },
-    { x: 678, y: GROUND_Y - 40, v: 4 },
-  ];
-  enemies.forEach((e, i) => {
-    const bob = Math.sin(t * 3 + i) > 0 ? 0 : 1;
-    drawEnemy(sceneCtx, e.x, e.y + bob, e.v);
-  });
-
-  const boltX = 270 + ((t * 90) % 280);
-  drawProjectile(sceneCtx, boltX, GROUND_Y - 78, "bolt");
-  drawProjectile(sceneCtx, boltX - 60, GROUND_Y - 96, "arrow");
-  drawProjectile(sceneCtx, boltX - 36, GROUND_Y - 60, "arrow");
-
-  drawHitFx(sceneCtx, 470, GROUND_Y - 78, t);
-
+  drawLeftKeep(sceneCtx);
+  drawRightKeep(sceneCtx);
+  drawBridge(sceneCtx, t);
   drawMiniHud(sceneCtx);
+  drawMapStrip(sceneCtx);
   drawInkFrame(sceneCtx, W, H, PALETTE.charcoal);
 
   outCtx.drawImage(sceneCanvas, 0, 0);
@@ -563,13 +657,14 @@ export function renderStyleTest({
     scratchCtx.clearRect(0, 0, W, H);
     scratchCtx.drawImage(outCtx.canvas, 0, 0);
     applyEdgeDof(outCtx, scratchCanvas, W, H, {
-      topFrac: 0.12,
-      bottomFrac: 0.1,
-      blurPx: 1.2,
+      topFrac: 0.14,
+      bottomFrac: 0.06,
+      blurPx: 1.15,
     });
-    applyVignette(outCtx, W, H, { strength: 0.2 });
-    applyGrain(outCtx, W, H, { opacity: 0.028, seed: 11 });
+    applyVignette(outCtx, W, H, { strength: 0.18 });
+    applyGrain(outCtx, W, H, { opacity: 0.032, seed: 17 });
   }
 }
 
 export const STYLE_TEST_SIZE = { width: W, height: H };
+export const STYLE_TEST_LAYOUT = { mapY: MAP_Y, combatH: COMBAT_H };
