@@ -146,7 +146,7 @@ function updateEnemies(state, dt) {
             team: "enemy",
             x: e.x,
             y: e.y,
-            vx: -def.projectileSpeed * state.mods.projSpeedMul,
+            vx: -def.projectileSpeed,
             vy: 0,
             damage: def.projectileDamage,
             radius: 2.5,
