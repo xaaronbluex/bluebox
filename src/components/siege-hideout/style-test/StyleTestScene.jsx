@@ -8,10 +8,10 @@ import {
   disableSmoothing,
   displaySize,
 } from "../shared/canvasScale.js";
-import { renderStyleTest } from "./styleTestRender.js";
+import { preloadStyleTestBg, renderStyleTest } from "./styleTestRender.js";
 
 /**
- * Style-test visual proof — v6 parchment isometric bridge + campaign-map strip.
+ * Style-test visual proof — v7 user theme plate as playfield background.
  */
 function readToggleParam(name, defaultOn = true) {
   try {
@@ -26,6 +26,8 @@ function readToggleParam(name, defaultOn = true) {
 
 export default function StyleTestScene() {
   const displayRef = useRef(null);
+  const bgRef = useRef(null);
+  const [bgReady, setBgReady] = useState(false);
   const [halftone, setHalftone] = useState(() => readToggleParam("halftone", true));
   const [dofGrain, setDofGrain] = useState(() => readToggleParam("dof", true));
   const togglesRef = useRef({
@@ -36,6 +38,23 @@ export default function StyleTestScene() {
   useEffect(() => {
     togglesRef.current = { halftone, dofGrain };
   }, [halftone, dofGrain]);
+
+  useEffect(() => {
+    let cancelled = false;
+    preloadStyleTestBg()
+      .then((img) => {
+        if (cancelled) return;
+        bgRef.current = img;
+        setBgReady(true);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!cancelled) setBgReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -51,6 +70,7 @@ export default function StyleTestScene() {
   }, []);
 
   useEffect(() => {
+    if (!bgReady) return;
     const display = displayRef.current;
     if (!display) return;
 
@@ -75,7 +95,12 @@ export default function StyleTestScene() {
         sceneCanvas: scene.canvas,
         scratchCanvas: scratch.canvas,
         scratchCtx: scratch.ctx,
-        options: { halftone: h, dofGrain: g, timeMs: now - start },
+        options: {
+          halftone: h,
+          dofGrain: g,
+          timeMs: now - start,
+          bgImage: bgRef.current,
+        },
       });
       blitNearest(displayCtx, out.canvas, DISPLAY_SCALE);
       raf = requestAnimationFrame(frame);
@@ -83,7 +108,7 @@ export default function StyleTestScene() {
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [bgReady]);
 
   return (
     <div className="siege-style-test">
@@ -106,6 +131,7 @@ export default function StyleTestScene() {
         </label>
         <span className="siege-style-test__meta">
           {LOGICAL_WIDTH}×{LOGICAL_HEIGHT} ×{DISPLAY_SCALE}
+          {!bgReady ? " · loading BG…" : ""}
         </span>
       </div>
       <div className="siege-canvas-shell">
@@ -119,7 +145,7 @@ export default function StyleTestScene() {
         />
       </div>
       <p className="siege-style-test__hint">
-        Style test v6 — parchment isometric bridge (960×540), royal blue vs crimson, campaign-map strip. Original marks only.
+        Style test v7 — user theme plate as BG (960×540 cover), light HUD only. Original marks deferred.
       </p>
     </div>
   );
