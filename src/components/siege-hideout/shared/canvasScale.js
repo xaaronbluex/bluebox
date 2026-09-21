@@ -1,8 +1,9 @@
 /** Logical pixel canvas helpers — nearest-neighbour only. */
 
-export const LOGICAL_WIDTH = 426;
-export const LOGICAL_HEIGHT = 240;
-export const DISPLAY_SCALE = 3;
+/** v3: 640×360 — ~1.5× denser than v2 426×240; ×2 → 1280×720 display. */
+export const LOGICAL_WIDTH = 640;
+export const LOGICAL_HEIGHT = 360;
+export const DISPLAY_SCALE = 2;
 
 /**
  * @param {number} width

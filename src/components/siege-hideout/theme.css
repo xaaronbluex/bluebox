@@ -11,12 +11,13 @@
   --siege-red-dark: #6f2525;
   --siege-brass: #c69a43;
   --siege-player: #6b7a86;
+  --siege-navy: #2a3a52;
   --siege-stone: #a8adb3;
   --siege-stone-blue: #7a8694;
   --siege-earth: #6b5344;
   --siege-grass: #5a6b4a;
   --siege-fire: #e09a3a;
-  --siege-canvas-scale: 3;
+  --siege-canvas-scale: 2;
 
   color: var(--siege-pale);
   background:
@@ -143,8 +144,8 @@
 
 .siege-canvas {
   display: block;
-  width: min(100%, calc(426px * var(--siege-canvas-scale)));
-  aspect-ratio: 426 / 240;
+  width: min(100%, calc(640px * var(--siege-canvas-scale)));
+  aspect-ratio: 640 / 360;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
