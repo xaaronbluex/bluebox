@@ -95,6 +95,95 @@
   font-size: 0.85rem;
 }
 
+/* —— Hideout settlement shell —— */
+
+.hideout__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.hideout__stat {
+  color: var(--siege-pale);
+  letter-spacing: 0.02em;
+}
+
+.hideout__stat--marks {
+  color: var(--siege-brass);
+}
+
+.hideout__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hideout__btn {
+  appearance: none;
+  border: 1px solid var(--siege-charcoal-mid);
+  background: transparent;
+  color: var(--siege-pale);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.hideout__btn:hover:not(:disabled) {
+  border-color: var(--siege-brass);
+  color: var(--siege-parchment);
+}
+
+.hideout__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hideout__canvas {
+  cursor: pointer;
+}
+
+.hideout__panel {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(141, 141, 135, 0.28);
+  background: rgba(29, 32, 32, 0.45);
+  font-size: 0.78rem;
+  color: var(--siege-pale);
+  min-height: 3.2rem;
+}
+
+.hideout__panel p {
+  margin: 0.35rem 0 0;
+}
+
+.hideout__panel em {
+  font-style: normal;
+  color: var(--siege-brass);
+}
+
+.hideout__muted {
+  color: var(--siege-mid);
+}
+
+.hideout__flash {
+  margin: 0.4rem 0 0 !important;
+  color: var(--siege-parchment) !important;
+}
+
+.hideout__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: var(--siege-mid);
+}
+
 .siege-style-test__toolbar {
   display: flex;
   flex-wrap: wrap;

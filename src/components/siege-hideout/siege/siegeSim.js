@@ -6,6 +6,8 @@ import { getEnemyDef } from "./configs/enemies.js";
 import { CASTLE, PLAYER_WEAPON, AUTO_TOWER } from "./configs/weapons.js";
 import { WAVE_COUNT, getWave } from "./configs/waves.js";
 import { UPGRADES, rollUpgradeChoices } from "./configs/upgrades.js";
+import { getSiegeBonusesFromHideout } from "../hideout/hideoutSim.js";
+import { LAST_RUN_KEY } from "../hideout/hideoutStorage.js";
 
 /** Combat lane Y band (matches style-test MAP_Y combat region). */
 export const LANE = {
@@ -34,6 +36,45 @@ function defaultMods() {
     projSpeedMul: 1,
     rewardMul: 1,
   };
+}
+
+/** Fold Hideout permanent bonuses into a fresh mods + castle HP package. */
+function applyHideoutBonuses(state) {
+  let bonus;
+  try {
+    bonus = getSiegeBonusesFromHideout();
+  } catch {
+    bonus = null;
+  }
+  if (!bonus) return;
+  state.mods.playerDamageMul += bonus.playerDamageMulAdd || 0;
+  state.mods.playerCooldownMul = Math.max(
+    0.55,
+    state.mods.playerCooldownMul + (bonus.playerCooldownMulAdd || 0),
+  );
+  state.mods.towerDamageMul += bonus.towerDamageMulAdd || 0;
+  state.mods.towerCooldownMul = Math.max(
+    0.55,
+    state.mods.towerCooldownMul + (bonus.towerCooldownMulAdd || 0),
+  );
+  state.mods.towerRangeAdd += bonus.towerRangeAdd || 0;
+  state.mods.projSpeedMul += bonus.projSpeedMulAdd || 0;
+  state.mods.rewardMul += bonus.rewardMulAdd || 0;
+  const hpAdd = Math.max(0, Math.floor(bonus.castleHpAdd || 0));
+  state.castleMaxHp = CASTLE.maxHp + hpAdd;
+  state.castleHp = state.castleMaxHp;
+  state.hideoutBonus = bonus;
+}
+
+function writeLastRun(summary) {
+  try {
+    localStorage.setItem(
+      LAST_RUN_KEY,
+      JSON.stringify({ ...summary, at: Date.now() }),
+    );
+  } catch {
+    /* ignore */
+  }
 }
 
 function laneY(seed) {
@@ -78,7 +119,7 @@ function buildSpawnQueue(wave) {
 }
 
 export function createSiegeState() {
-  return {
+  const state = {
     phase: PHASE.combat,
     pauseResumePhase: PHASE.combat,
     waveIndex: 1,
@@ -102,7 +143,10 @@ export function createSiegeState() {
     kills: 0,
     elapsed: 0,
     summary: null,
+    hideoutBonus: null,
   };
+  applyHideoutBonuses(state);
+  return state;
 }
 
 export function getSiegeConstants() {
@@ -272,14 +316,7 @@ function enterBetweenWaves(state) {
       kills: state.kills,
       upgrades: [...state.ownedUpgrades],
     };
-    try {
-      localStorage.setItem(
-        "siege-hideout:last-run",
-        JSON.stringify({ ...state.summary, at: Date.now() }),
-      );
-    } catch {
-      /* ignore */
-    }
+    writeLastRun(state.summary);
     return;
   }
   state.phase = PHASE.betweenWaves;
@@ -336,14 +373,7 @@ export function tickSiege(state, dt) {
       kills: state.kills,
       upgrades: [...state.ownedUpgrades],
     };
-    try {
-      localStorage.setItem(
-        "siege-hideout:last-run",
-        JSON.stringify({ ...state.summary, at: Date.now() }),
-      );
-    } catch {
-      /* ignore */
-    }
+    writeLastRun(state.summary);
     return;
   }
 
