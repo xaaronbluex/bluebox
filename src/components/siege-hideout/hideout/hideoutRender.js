@@ -246,16 +246,27 @@ export function renderHideout({
   ctx.textAlign = "center";
   ctx.fillText("FORTRESS HIDEOUT", W / 2, 104);
 
-  // Post FX pipeline (match Siege / Style Test)
+  // Post FX pipeline (match Siege / Style Test signatures)
   outCtx.clearRect(0, 0, W, H);
   outCtx.drawImage(sceneCanvas, 0, 0);
+
   if (halftone) {
-    applyOrderedDither(outCtx, scratchCtx, scratchCanvas);
+    applyOrderedDither(outCtx, W, H, { strength: 0.08, matrix: "8" });
   }
-  if (dofGrain) {
-    applyEdgeDof(outCtx, scratchCtx, scratchCanvas);
-    applyGrain(outCtx);
-    applyVignette(outCtx);
+
+  sceneCtx.clearRect(0, 0, W, H);
+  drawInkFrame(sceneCtx, W, H, PALETTE.charcoal);
+  outCtx.drawImage(sceneCanvas, 0, 0);
+
+  if (dofGrain && typeof document !== "undefined" && !document.hidden) {
+    scratchCtx.clearRect(0, 0, W, H);
+    scratchCtx.drawImage(outCtx.canvas, 0, 0);
+    applyEdgeDof(outCtx, scratchCanvas, W, H, {
+      topFrac: 0.08,
+      bottomFrac: 0.04,
+      blurPx: 0.8,
+    });
+    applyVignette(outCtx, W, H, { strength: 0.1 });
+    applyGrain(outCtx, W, H, { opacity: 0.018, seed: 23 });
   }
-  drawInkFrame(outCtx);
 }

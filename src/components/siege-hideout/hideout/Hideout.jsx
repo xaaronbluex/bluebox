@@ -217,18 +217,12 @@ export default function Hideout({ onExit } = {}) {
   return (
     <div className="hideout" data-hideout="true">
       <div className="hideout__toolbar">
-        <span className="hideout__stat">
-          Sup {hud.resources.supplies}
-        </span>
-        <span className="hideout__stat">
-          Stn {hud.resources.stone}
-        </span>
+        <span className="hideout__stat">Sup {hud.resources.supplies}</span>
+        <span className="hideout__stat">Stn {hud.resources.stone}</span>
         <span className="hideout__stat hideout__stat--marks">
           Seals {hud.resources.marks}
         </span>
-        <span className="hideout__stat">
-          Ready {hud.readyCount}
-        </span>
+        <span className="hideout__stat">Ready {hud.readyCount}</span>
         <div className="hideout__actions">
           <button type="button" className="hideout__btn" onClick={onCollectAll}>
             Collect all
