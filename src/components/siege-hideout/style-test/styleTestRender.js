@@ -209,62 +209,55 @@ function drawIsoTile(ctx, cx, cy, hw, hh, top, left, right) {
 }
 
 /**
- * Isometric prism (2:1) with stone courses on walls.
+ * Isometric prism (2:1) — top rhombus + parallelogram walls with stone courses.
  * (cx,cy) = top-face center.
  */
 function drawIsoPrism(ctx, cx, cy, hw, hh, depth, top, left, right) {
-  // Top diamond
-  for (let dy = -hh; dy <= 0; dy++) {
-    const t = 1 - Math.abs(dy) / Math.max(1, hh);
-    const half = Math.max(1, Math.floor(hw * t));
-    for (let dx = -half; dx <= half; dx++) {
-      const c = hash2(cx + dx, cy + dy) > 0.9 ? left : top;
-      px(ctx, c, cx + dx, cy + dy);
+  const H = Math.max(1, hh);
+  const W = Math.max(1, hw);
+  // Top rhombus
+  for (let row = -H; row <= H; row++) {
+    const half = Math.max(1, Math.round(W * (1 - Math.abs(row) / H)));
+    for (let col = -half; col <= half; col++) {
+      const c = hash2(cx + col, cy + row) > 0.9 ? left : top;
+      px(ctx, c, cx + col, cy + row);
     }
   }
-  // Left wall — stone courses
-  for (let dy = 1; dy <= depth; dy++) {
-    const y = cy + dy;
-    const course = Math.floor(dy / 3);
-    for (let row = 0; row <= hh; row++) {
-      const t = 1 - row / Math.max(1, hh);
-      const half = Math.max(1, Math.floor(hw * t));
-      for (let dx = -half; dx <= -1; dx++) {
-        const mortar = dy % 3 === 2 || (dx + course) % 4 === 0;
-        const base = mortar
-          ? charcoalMid
-          : pickShade(cx + dx, y + row, left, slateDeep, charcoalMid);
-        px(ctx, base, cx + dx, y + row);
-      }
+  // Left face (SW parallelogram)
+  for (let d = 1; d <= depth; d++) {
+    for (let i = 0; i <= W; i++) {
+      const x = cx - W + i;
+      const y = cy + Math.round((i / W) * H) + d;
+      const mortar = d % 3 === 0 || (i + Math.floor(d / 3)) % 5 === 0;
+      const base = mortar
+        ? charcoalMid
+        : pickShade(x, y, left, slateDeep, charcoalMid);
+      px(ctx, base, x, y);
     }
   }
-  // Right wall — stone courses
-  for (let dy = 1; dy <= depth; dy++) {
-    const y = cy + dy;
-    const course = Math.floor(dy / 3);
-    for (let row = 0; row <= hh; row++) {
-      const t = 1 - row / Math.max(1, hh);
-      const half = Math.max(1, Math.floor(hw * t));
-      for (let dx = 1; dx <= half; dx++) {
-        const mortar = dy % 3 === 2 || (dx + course) % 4 === 0;
-        const base = mortar
-          ? charcoalMid
-          : pickShade(cx + dx, y + row, right, charcoalMid, slate);
-        px(ctx, base, cx + dx, y + row);
-      }
+  // Right face (SE parallelogram)
+  for (let d = 1; d <= depth; d++) {
+    for (let i = 0; i <= W; i++) {
+      const x = cx + W - i;
+      const y = cy + Math.round((i / W) * H) + d;
+      const mortar = d % 3 === 0 || (i + Math.floor(d / 3)) % 5 === 0;
+      const base = mortar
+        ? charcoalMid
+        : pickShade(x, y, right, charcoalMid, slate);
+      px(ctx, base, x, y);
     }
   }
-  // Front seam
-  fill(ctx, charcoalMid, cx - 1, cy + 1, 2, depth);
+  // Front vertical seam (readable cube edge)
+  fill(ctx, charcoal, cx - 1, cy + H + 1, 2, depth);
 }
 
 /** Merlon battlements along an iso ridge. */
-function drawBattlements(ctx, cx, cy, count, spacing, hw = 7, hh = 4, depth = 10) {
+function drawBattlements(ctx, cx, cy, count, spacing, hw = 6, hh = 3, depth = 8) {
   for (let i = -Math.floor(count / 2); i <= Math.floor(count / 2); i++) {
     drawIsoPrism(
       ctx,
       cx + i * spacing,
-      cy - 2 + Math.abs(i),
+      cy + Math.abs(i),
       hw,
       hh,
       depth,
@@ -275,25 +268,23 @@ function drawBattlements(ctx, cx, cy, count, spacing, hw = 7, hh = 4, depth = 10
   }
 }
 
-/** Arched wood gate recessed into a keep face. */
+/** Arched wood gate on the front (SE-ish) face of a keep. */
 function drawGateArch(ctx, x, y, w, h) {
   fill(ctx, charcoal, x, y, w, h);
-  // Arch crown
   const mid = x + (w >> 1);
-  for (let iy = 0; iy < 10; iy++) {
-    const half = Math.floor((w / 2) * (1 - iy / 12));
-    fill(ctx, charcoal, mid - half, y + iy - 8, half * 2, 1);
+  for (let iy = 0; iy < 8; iy++) {
+    const half = Math.floor((w / 2) * (1 - iy / 10));
+    fill(ctx, charcoal, mid - half, y + iy - 6, half * 2, 1);
   }
   drawWoodGrain(ctx, x + 2, y + 2, w - 4, h - 4);
   for (let i = 0; i < Math.floor((w - 6) / 5); i++) {
     fill(ctx, woodDark, x + 4 + i * 5, y + 3, 2, h - 6);
   }
   fill(ctx, brass, mid - 2, y + Math.floor(h * 0.45), 4, 4);
-  // Stone arch ring
-  for (let a = -Math.floor(w / 2) - 2; a <= Math.floor(w / 2) + 2; a++) {
-    const ay = y - 6 + Math.floor((a * a) / Math.max(8, w));
-    fill(ctx, stoneLight, mid + a, ay, 3, 3);
-    fill(ctx, charcoalMid, mid + a, ay + 2, 3, 1);
+  for (let a = -Math.floor(w / 2) - 1; a <= Math.floor(w / 2) + 1; a++) {
+    const ay = y - 5 + Math.floor((a * a) / Math.max(8, w));
+    fill(ctx, stoneLight, mid + a, ay, 2, 3);
+    fill(ctx, charcoalMid, mid + a, ay + 2, 2, 1);
   }
 }
 
@@ -460,49 +451,52 @@ function drawHitSpark(ctx, x, y, t) {
 }
 
 function drawLeftKeep(ctx) {
-  // Rocky plateau stepping into gorge (left-defend shelf)
+  // Rocky plateau stepping into gorge
   drawPlateau(ctx, 4, 175, 250, 5, true);
   fillDitherRect(ctx, 10, 290, 230, 55, earth, earthDark, 0.38, 4);
 
-  // Outer curtain wall (lower mass)
-  drawIsoPrism(ctx, 105, 168, 58, 24, 55, stoneLight, slate, slateDeep);
-  drawBattlements(ctx, 105, 156, 7, 15, 7, 4, 11);
+  for (let i = 0; i < 5; i++) {
+    const p = isoToScreen(i * 0.9, 1.2, 60, 240);
+    drawIsoTile(ctx, p.x, p.y, 16, 8, grass, moss, earthDark);
+  }
 
-  // Gatehouse — thicker prism + arched wood gate on front face
-  drawIsoPrism(ctx, 118, 128, 42, 20, 72, stoneLight, slate, charcoalMid);
-  drawBattlements(ctx, 118, 116, 5, 14, 7, 4, 11);
-  drawGateArch(ctx, 98, 168, 40, 48);
+  // Curtain wall
+  drawIsoPrism(ctx, 100, 175, 48, 24, 42, stoneLight, slate, slateDeep);
+  drawBattlements(ctx, 100, 168, 6, 14, 6, 3, 8);
 
-  // Tall keep tower (right of gatehouse)
-  drawIsoPrism(ctx, 178, 88, 28, 14, 118, stoneLight, slate, charcoalMid);
-  drawBattlements(ctx, 178, 76, 3, 14, 8, 5, 12);
-  drawWoodGrain(ctx, 158, 64, 40, 12);
-  fill(ctx, brass, 174, 60, 5, 4);
+  // Gatehouse block
+  drawIsoPrism(ctx, 115, 130, 36, 18, 58, stoneLight, slate, charcoalMid);
+  drawBattlements(ctx, 115, 122, 5, 12, 6, 3, 8);
+  drawGateArch(ctx, 108, 155, 28, 40);
+
+  // Tall keep tower
+  drawIsoPrism(ctx, 170, 95, 26, 13, 95, stoneLight, slate, charcoalMid);
+  drawBattlements(ctx, 170, 86, 3, 12, 7, 4, 10);
+  drawWoodGrain(ctx, 152, 72, 36, 10);
+  fill(ctx, brass, 166, 68, 5, 4);
 
   // Corner turret
-  drawIsoPrism(ctx, 68, 148, 16, 9, 50, stoneBlue, slateDeep, charcoalMid);
-  drawBattlements(ctx, 68, 140, 2, 12, 6, 3, 9);
+  drawIsoPrism(ctx, 62, 155, 14, 7, 40, stoneBlue, slateDeep, charcoalMid);
+  drawBattlements(ctx, 62, 148, 2, 10, 5, 3, 7);
 
-  drawBlueBanner(ctx, 72, 130, 36);
-  drawBlueBanner(ctx, 132, 108, 32);
-  fill(ctx, woodDark, 182, 70, 2, 18);
+  drawBlueBanner(ctx, 70, 138, 34);
+  drawBlueBanner(ctx, 128, 112, 30);
+  fill(ctx, woodDark, 176, 78, 2, 16);
   for (let iy = 0; iy < 10; iy++) {
-    for (let ix = 0; ix < 14; ix++) {
-      px(ctx, hash2(182 + ix, 70 + iy) > 0.9 ? navyDeep : royal, 184 + ix, 70 + iy);
+    for (let ix = 0; ix < 12; ix++) {
+      px(ctx, hash2(176 + ix, 78 + iy) > 0.9 ? navyDeep : royal, 178 + ix, 78 + iy);
     }
   }
-  fill(ctx, ash, 188, 73, 4, 4);
+  fill(ctx, ash, 181, 81, 4, 4);
 
-  // Window slits
-  fill(ctx, charcoal, 168, 120, 3, 8);
-  fill(ctx, charcoal, 188, 110, 3, 8);
-  fill(ctx, charcoal, 110, 140, 3, 7);
+  fill(ctx, charcoal, 160, 125, 3, 7);
+  fill(ctx, charcoal, 182, 115, 3, 7);
 
-  drawIsoArcher(ctx, 95, 112);
-  drawIsoArcher(ctx, 140, 100);
-  drawIsoDefender(ctx, 88, 214);
-  drawIsoDefender(ctx, 128, 220);
-  drawIsoDefender(ctx, 158, 208);
+  drawIsoArcher(ctx, 95, 118);
+  drawIsoArcher(ctx, 138, 105);
+  drawIsoDefender(ctx, 85, 218);
+  drawIsoDefender(ctx, 120, 224);
+  drawIsoDefender(ctx, 150, 212);
 
   drawPine(ctx, 8, 220, 1.2);
   drawPine(ctx, -4, 255, 0.95);
@@ -513,39 +507,41 @@ function drawRightKeep(ctx) {
   drawPlateau(ctx, 700, 170, 250, 5, false);
   fillDitherRect(ctx, 720, 288, 220, 55, earth, charcoalMid, 0.4, 4);
 
-  // Assault fort — main hall
-  drawIsoPrism(ctx, 820, 140, 48, 20, 70, stoneBlue, slateDeep, charcoalMid);
-  drawBattlements(ctx, 820, 128, 5, 15, 7, 4, 11);
-
-  // Tall watch tower
-  drawIsoPrism(ctx, 875, 92, 26, 13, 115, stoneBlue, slateDeep, charcoal);
-  drawBattlements(ctx, 875, 80, 3, 13, 8, 5, 12);
-  drawWoodGrain(ctx, 855, 68, 42, 12);
-
-  // Palisade / wooden outworks toward bridge
-  drawIsoPrism(ctx, 760, 168, 22, 10, 36, woodLight, wood, woodDark);
-  for (let i = 0; i < 5; i++) {
-    fill(ctx, woodDark, 742 + i * 8, 190, 3, 22);
-    fill(ctx, wood, 742 + i * 8, 188, 3, 2);
+  for (let i = 0; i < 4; i++) {
+    const p = isoToScreen(i * 0.9, 1.0, 780, 235);
+    drawIsoTile(ctx, p.x, p.y, 15, 7, grass, moss, earthDark);
   }
 
-  drawRedBanner(ctx, 792, 118, 34);
-  drawRedBanner(ctx, 848, 98, 30);
-  fill(ctx, woodDark, 888, 74, 2, 18);
+  drawIsoPrism(ctx, 815, 145, 42, 21, 52, stoneBlue, slateDeep, charcoalMid);
+  drawBattlements(ctx, 815, 136, 5, 14, 6, 3, 8);
+
+  drawIsoPrism(ctx, 870, 95, 24, 12, 100, stoneBlue, slateDeep, charcoal);
+  drawBattlements(ctx, 870, 86, 3, 12, 7, 4, 10);
+  drawWoodGrain(ctx, 852, 72, 38, 10);
+
+  drawIsoPrism(ctx, 755, 170, 18, 9, 28, woodLight, wood, woodDark);
+  for (let i = 0; i < 5; i++) {
+    fill(ctx, woodDark, 735 + i * 8, 195, 3, 20);
+    fill(ctx, wood, 735 + i * 8, 193, 3, 2);
+  }
+
+  drawRedBanner(ctx, 788, 122, 32);
+  drawRedBanner(ctx, 842, 100, 28);
+  fill(ctx, woodDark, 882, 78, 2, 16);
   for (let iy = 0; iy < 10; iy++) {
-    for (let ix = 0; ix < 14; ix++) {
-      px(ctx, hash2(888 + ix, 74 + iy) > 0.88 ? redDark : crimson, 890 + ix, 74 + iy);
+    for (let ix = 0; ix < 12; ix++) {
+      px(ctx, hash2(882 + ix, 78 + iy) > 0.88 ? redDark : crimson, 884 + ix, 78 + iy);
     }
   }
-  fill(ctx, ash, 894, 77, 6, 2);
+  fill(ctx, ash, 887, 81, 6, 2);
 
-  fill(ctx, charcoal, 862, 130, 3, 8);
-  fill(ctx, charcoal, 886, 118, 3, 8);
+  fill(ctx, charcoal, 858, 130, 3, 7);
+  fill(ctx, charcoal, 880, 120, 3, 7);
 
-  drawIsoGrunt(ctx, 780, 218, 0);
-  drawIsoGrunt(ctx, 812, 224, 1);
-  drawIsoGrunt(ctx, 846, 214, 0);
-  drawIsoGrunt(ctx, 870, 230, 2);
+  drawIsoGrunt(ctx, 775, 220, 0);
+  drawIsoGrunt(ctx, 808, 226, 1);
+  drawIsoGrunt(ctx, 840, 216, 0);
+  drawIsoGrunt(ctx, 865, 232, 2);
 
   drawPine(ctx, 920, 228, 1.1);
   drawPine(ctx, 900, 262, 0.85);
@@ -553,19 +549,18 @@ function drawRightKeep(ctx) {
 }
 
 function drawGorge(ctx) {
-  // Chasm body — V-ish rocky walls, not a flat rectangle
-  for (let y = 175; y < 340; y++) {
-    const depth = (y - 175) / 165;
-    const leftEdge = 250 + Math.floor(depth * 40) + Math.floor(hash2(1, y) * 6);
-    const rightEdge = 710 - Math.floor(depth * 35) - Math.floor(hash2(2, y) * 6);
+  for (let y = 170; y < 345; y++) {
+    const depth = (y - 170) / 175;
+    const leftEdge = 245 + Math.floor(depth * 50) + Math.floor(hash2(1, y) * 8);
+    const rightEdge = 715 - Math.floor(depth * 45) - Math.floor(hash2(2, y) * 8);
     for (let x = leftEdge; x < rightEdge; x++) {
       const fromL = (x - leftEdge) / Math.max(1, rightEdge - leftEdge);
-      const wall = fromL < 0.12 || fromL > 0.88;
-      const midBand = fromL > 0.35 && fromL < 0.65;
+      const wall = fromL < 0.14 || fromL > 0.86;
+      const midBand = fromL > 0.32 && fromL < 0.68;
       let base;
       if (wall) {
-        base = pickShade(x, y, cliff, slateDeep, charcoalMid);
-      } else if (midBand && depth > 0.45) {
+        base = pickShade(x, y, cliffLit, cliff, slateDeep);
+      } else if (midBand && depth > 0.4) {
         base = pickShade(x, y, charcoal, charcoalMid, slateDeep);
       } else {
         base = pickShade(x, y, slateDeep, charcoalMid, cliff);
@@ -573,100 +568,100 @@ function drawGorge(ctx) {
       px(ctx, base, x, y);
     }
   }
-  // Mist pool in chasm floor
-  fillDitherRect(ctx, 310, 280, 340, 55, mist, charcoalMid, 0.32, 8);
-  fillDitherRect(ctx, 340, 300, 280, 35, mist, ash, 0.22, 8);
-  // Rocky spurs
-  drawCliffMass(ctx, 300, 230, 50, 70, false);
-  drawCliffMass(ctx, 610, 225, 55, 75, false);
-  drawWaterfall(ctx, 455, 145, 130);
-  drawWaterfall(ctx, 490, 155, 110);
+  fillDitherRect(ctx, 305, 275, 350, 60, mist, charcoalMid, 0.3, 8);
+  fillDitherRect(ctx, 335, 298, 290, 38, mist, ash, 0.2, 8);
+  drawCliffMass(ctx, 290, 220, 55, 80, false);
+  drawCliffMass(ctx, 615, 215, 58, 85, false);
+  drawWaterfall(ctx, 450, 140, 135);
+  drawWaterfall(ctx, 485, 150, 115);
 }
 
 function drawBridge(ctx, t) {
-  const deckY = 208;
-  const x0 = 248;
-  const x1 = 712;
-  const deckH = 22;
+  // Continuous iso deck with overlapping tiles (solid lane, not floating row)
+  const tiles = 22;
+  const ox = 255;
+  const oy = 200;
 
-  // Far parapet (behind deck)
-  for (let x = x0; x < x1; x += 3) {
-    const rise = Math.floor(Math.sin((x - x0) * 0.02) * 1.5);
-    fill(ctx, slate, x, deckY - 10 + rise, 3, 8);
-    if ((x - x0) % 18 < 3) fill(ctx, stoneLight, x, deckY - 14 + rise, 4, 5);
+  for (let i = 0; i < tiles; i++) {
+    const x = ox + i * 20;
+    const y = oy + Math.floor(i * 0.7) - 8;
+    fill(ctx, slate, x, y, 4, 10);
+    if (i % 2 === 0) fill(ctx, stoneLight, x, y - 4, 5, 5);
   }
 
-  // Solid stone deck — continuous span (gentle iso tilt: near edge lower)
-  for (let y = 0; y < deckH; y++) {
-    const near = y / deckH;
-    for (let x = x0; x < x1; x++) {
-      const mortar = y % 4 === 3 || (x + Math.floor(y / 4)) % 7 === 0;
-      const base = mortar
-        ? charcoalMid
-        : pickShade(x, deckY + y, stoneLight, stoneBlue, slate);
-      px(ctx, base, x, deckY + y + Math.floor(near * 2));
+  for (let row = 0; row < 3; row++) {
+    for (let i = 0; i < tiles - row; i++) {
+      const x = ox + i * 20 + row * 6;
+      const y = oy + Math.floor(i * 0.7) + row * 7;
+      drawIsoTile(
+        ctx,
+        x,
+        y,
+        14,
+        7,
+        pickShade(x, y, stoneLight, stoneBlue, slate),
+        slate,
+        slateDeep
+      );
     }
   }
-  // Near edge lip
-  fill(ctx, charcoalMid, x0, deckY + deckH + 1, x1 - x0, 3);
-  fill(ctx, slateDeep, x0, deckY + deckH + 3, x1 - x0, 2);
 
-  // Supporting piers + arches into gorge
-  const piers = [320, 400, 480, 560, 640];
-  for (const px0 of piers) {
-    drawDenseStoneRect(ctx, px0 - 10, deckY + deckH + 2, 20, 55, false);
-    fill(ctx, charcoal, px0 - 12, deckY + deckH + 50, 24, 8);
+  for (let i = 0; i < tiles; i++) {
+    const x = ox + i * 20 + 10;
+    const y = oy + Math.floor(i * 0.7) + 20;
+    fill(ctx, charcoalMid, x - 2, y, 16, 3);
+    if (i % 2 === 0) {
+      fill(ctx, woodDark, x + 4, y - 12, 3, 14);
+      fill(ctx, wood, x, y - 12, 11, 3);
+    }
   }
-  // Arch curves between piers
+
+  const piers = [310, 390, 470, 550, 630];
+  for (const px0 of piers) {
+    const py = oy + 28;
+    drawDenseStoneRect(ctx, px0 - 8, py, 16, 48, false);
+    fill(ctx, charcoal, px0 - 10, py + 44, 20, 8);
+  }
   for (let i = 0; i < piers.length - 1; i++) {
-    const a = piers[i] + 10;
-    const b = piers[i + 1] - 10;
-    const mid = (a + b) >> 1;
+    const a = piers[i] + 8;
+    const b = piers[i + 1] - 8;
     const span = b - a;
     for (let x = a; x <= b; x++) {
       const u = (x - a) / Math.max(1, span);
-      const archY = deckY + deckH + 6 + Math.floor(Math.sin(u * Math.PI) * 28);
+      const archY = oy + 32 + Math.floor(Math.sin(u * Math.PI) * 26);
       fill(ctx, slate, x, archY, 2, 4);
       fill(ctx, charcoalMid, x, archY + 3, 2, 2);
-      if (Math.abs(x - mid) < 3) fill(ctx, stoneBlue, x, archY - 2, 2, 3);
     }
   }
 
-  // Near rail posts + beam
-  for (let i = 0; i < 14; i++) {
-    const x = x0 + 16 + i * 32;
-    fill(ctx, woodDark, x, deckY + 6, 3, 16);
-    fill(ctx, wood, x - 5, deckY + 5, 13, 3);
-  }
-  // Blue pennants under near rail
   for (let i = 0; i < 5; i++) {
-    const x = x0 + 50 + i * 80;
-    fill(ctx, navyDeep, x, deckY + deckH + 4, 7, 16);
-    for (let iy = 1; iy < 14; iy++) {
+    const x = ox + 40 + i * 80;
+    const y = oy + 28;
+    fill(ctx, navyDeep, x, y, 7, 15);
+    for (let iy = 1; iy < 13; iy++) {
       for (let ix = 1; ix < 6; ix++) {
-        px(ctx, hash2(x + ix, deckY + iy) > 0.9 ? navyDeep : royal, x + ix, deckY + deckH + 4 + iy);
+        px(ctx, hash2(x + ix, y + iy) > 0.9 ? navyDeep : royal, x + ix, y + iy);
       }
     }
-    fill(ctx, ash, x + 2, deckY + deckH + 8, 2, 5);
+    fill(ctx, ash, x + 2, y + 4, 2, 5);
   }
 
-  // Combatants — blue west / red east on the deck lane
-  drawIsoArcher(ctx, 270, deckY - 8);
-  drawIsoDefender(ctx, 300, deckY - 4);
-  drawIsoDefender(ctx, 335, deckY - 6);
-  drawIsoDefender(ctx, 370, deckY - 2);
-  drawIsoDefender(ctx, 405, deckY - 5);
+  drawIsoArcher(ctx, 275, oy - 6);
+  drawIsoDefender(ctx, 310, oy - 2);
+  drawIsoDefender(ctx, 348, oy);
+  drawIsoDefender(ctx, 385, oy - 4);
+  drawIsoDefender(ctx, 420, oy - 1);
 
-  drawIsoGrunt(ctx, 520, deckY - 4, 0);
-  drawIsoGrunt(ctx, 555, deckY - 6, 1);
-  drawIsoGrunt(ctx, 590, deckY - 2, 0);
-  drawIsoGrunt(ctx, 625, deckY - 5, 1);
-  drawIsoGrunt(ctx, 660, deckY - 3, 2);
+  drawIsoGrunt(ctx, 520, oy - 2, 0);
+  drawIsoGrunt(ctx, 555, oy - 4, 1);
+  drawIsoGrunt(ctx, 590, oy, 0);
+  drawIsoGrunt(ctx, 625, oy - 3, 1);
+  drawIsoGrunt(ctx, 660, oy - 1, 2);
 
-  const boltX = 420 + Math.floor((t * 40) % 90);
-  drawBolt(ctx, boltX, deckY - 12);
-  drawBolt(ctx, boltX - 30, deckY - 18);
-  drawHitSpark(ctx, 530, deckY - 16, t);
+  const boltX = 430 + Math.floor((t * 40) % 80);
+  drawBolt(ctx, boltX, oy - 14);
+  drawBolt(ctx, boltX - 28, oy - 20);
+  drawHitSpark(ctx, 528, oy - 18, t);
 }
 
 function drawBackground(ctx) {
