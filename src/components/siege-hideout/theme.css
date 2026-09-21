@@ -17,7 +17,7 @@
   --siege-earth: #6b5344;
   --siege-grass: #5a6b4a;
   --siege-fire: #e09a3a;
-  --siege-canvas-scale: 2;
+  --siege-canvas-scale: 1;
 
   color: var(--siege-pale);
   background:
@@ -144,8 +144,9 @@
 
 .siege-canvas {
   display: block;
-  width: min(100%, calc(640px * var(--siege-canvas-scale)));
-  aspect-ratio: 640 / 360;
+  /* v4: native 960×540 present; CSS may shrink on narrow viewports */
+  width: min(100%, calc(960px * var(--siege-canvas-scale)));
+  aspect-ratio: 960 / 540;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;

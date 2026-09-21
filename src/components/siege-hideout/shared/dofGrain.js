@@ -81,6 +81,31 @@ function clampByte(v) {
   return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 }
 
+/** Soft radial vignette — macro lens falloff without crushing mid-band detail. */
+export function applyVignette(ctx, width, height, opts = {}) {
+  const strength = opts.strength ?? 0.22;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const { data } = imageData;
+  const cx = width * 0.5;
+  const cy = height * 0.48;
+  const maxR = Math.sqrt(cx * cx + cy * cy);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      if (data[i + 3] === 0) continue;
+      const dx = (x - cx) / maxR;
+      const dy = (y - cy) / maxR;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const fall = Math.max(0, d - 0.42) / 0.58;
+      const dim = 1 - fall * fall * strength;
+      data[i] = clampByte(data[i] * dim);
+      data[i + 1] = clampByte(data[i + 1] * dim);
+      data[i + 2] = clampByte(data[i + 2] * dim);
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
 /** Thin charcoal frame with mild ink distress. */
 export function drawInkFrame(ctx, width, height, charcoalHex = "#1D2020") {
   const ink = hexToRgb(charcoalHex);
