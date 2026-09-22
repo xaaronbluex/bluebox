@@ -41,9 +41,14 @@ export const WORD_SPHERE_SECONDARY = [
   "Evolution", "生命演化", "Symbiosis", "共生",
 ];
 
+/** Dense fill for the circular silhouette (mockup-like), without drowning primary nav. */
+const SECONDARY_TARGET = 220;
+
 const SECONDARY_PALETTE = [
-  "#94a3b8", "#7dd3fc", "#67e8f9", "#5eead4", "#a5b4fc", "#c4b5fd",
-  "#fcd34d", "#fda4af", "#86efac", "#67e8f9", "#a78bfa", "#cbd5e1",
+  "#ffffff", "#f8fafc", "#ff8c33", "#fb923c", "#f59e0b", "#facc15", "#fbbf24",
+  "#fb7185", "#f472b6", "#e879f9", "#c084fc", "#a78bfa", "#818cf8",
+  "#60a5fa", "#38bdf8", "#22d3ee", "#06b6d4", "#00e6b8", "#2dd4bf",
+  "#4ade80", "#a3e635", "#fda4af", "#7dd3fc", "#a5f3fc",
 ];
 
 function secondaryColor(label, index) {
@@ -53,18 +58,43 @@ function secondaryColor(label, index) {
   return SECONDARY_PALETTE[Math.abs(hash) % SECONDARY_PALETTE.length];
 }
 
+function densifySecondary(labels, target) {
+  if (labels.length === 0) return [];
+  const out = [];
+  let i = 0;
+  while (out.length < target) {
+    out.push(labels[i % labels.length]);
+    i += 1;
+  }
+  return out;
+}
+
+/**
+ * Interleave primary nav so page names sit throughout the sphere,
+ * not clustered at the start of the fibonacci spiral.
+ */
 function buildSphereEntries(primaryItems, secondaryLabels) {
-  const primary = primaryItems.map((item) => ({
-    ...item,
-    kind: "primary",
-  }));
-  const secondary = secondaryLabels.map((label, i) => ({
+  const secondaryDense = densifySecondary(secondaryLabels, SECONDARY_TARGET);
+  const secondary = secondaryDense.map((label, i) => ({
     label,
     tabId: null,
     color: secondaryColor(label, i),
     kind: "secondary",
   }));
-  return [...primary, ...secondary];
+  const primary = primaryItems.map((item) => ({
+    ...item,
+    kind: "primary",
+  }));
+
+  if (primary.length === 0) return secondary;
+
+  const merged = [...secondary];
+  const step = Math.max(1, Math.floor(merged.length / primary.length));
+  primary.forEach((item, i) => {
+    const at = Math.min(merged.length, i * step + Math.floor(step / 2));
+    merged.splice(at, 0, item);
+  });
+  return merged;
 }
 
 const SPHERE_RADIUS = 200;
@@ -170,10 +200,13 @@ export default function WordSphereNav({
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const drawRadius = Math.min(size.w, size.h) * 0.46;
+
   const projected = useMemo(() => {
     const { x: rotX, y: rotY } = rotationRef.current;
     const cx = size.w / 2;
     const cy = size.h / 2;
+    const radiusScale = drawRadius / SPHERE_RADIUS;
 
     const nodes = entries.map((item, i) => {
       const rotated = rotatePoint(basePoints[i], rotX, rotY);
@@ -189,21 +222,21 @@ export default function WordSphereNav({
         y,
         z,
         depth,
-        screenX: cx + x * perspectiveScale,
-        screenY: cy + y * perspectiveScale,
+        screenX: cx + x * radiusScale * perspectiveScale,
+        screenY: cy + y * radiusScale * perspectiveScale,
         opacity: isSecondary
-          ? 0.08 + depth * 0.42
-          : 0.22 + depth * 0.78,
+          ? 0.12 + depth * 0.55
+          : 0.35 + depth * 0.65,
         scale: isSecondary
-          ? 0.42 + depth * 0.38
-          : 0.62 + depth * 0.72,
-        blur: (1 - depth) * (isSecondary ? 2.2 : 3.5),
+          ? 0.38 + depth * 0.32
+          : 0.78 + depth * 0.55,
+        blur: (1 - depth) * (isSecondary ? 1.6 : 2.8),
       };
     });
 
     return nodes.sort((a, b) => a.z - b.z);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- frame drives rotation updates
-  }, [entries, basePoints, size, frame]);
+  }, [entries, basePoints, size, frame, drawRadius]);
 
   const handleMouseMove = (e) => {
     const el = containerRef.current;
@@ -238,26 +271,34 @@ export default function WordSphereNav({
     <div
       ref={containerRef}
       className={`word-sphere-nav relative mx-auto w-full select-none ${className}`.trim()}
-      style={{ height: "min(62vh, 560px)", maxWidth: "56rem" }}
+      style={{ height: "min(68vh, 620px)", maxWidth: "56rem" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       role="navigation"
       aria-label="Archive navigation sphere"
     >
+      <div
+        className="word-sphere-nav__disc pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: drawRadius * 2,
+          height: drawRadius * 2,
+        }}
+        aria-hidden
+      />
       {projected.map((node) => {
         const isSecondary = node.kind === "secondary";
         const isHovered = !isSecondary && hoveredIndex === node.index;
         const opacity = isHovered ? 1 : node.opacity;
         const scale = isHovered ? Math.max(node.scale, 1.05) * 1.12 : node.scale;
         const blur = isHovered ? 0 : node.blur;
-        const primarySize = node.label.length > 14 ? "0.88rem" : "1.05rem";
-        const secondarySize = node.label.length > 10 ? "0.52rem" : "0.58rem";
+        const primarySize = node.label.length > 14 ? "1.05rem" : "1.28rem";
+        const secondarySize = node.label.length > 10 ? "0.4rem" : "0.46rem";
 
         if (isSecondary) {
           return (
             <span
               key={`sec-${node.label}-${node.index}`}
-              className="word-sphere-nav__tag word-sphere-nav__tag--secondary absolute whitespace-nowrap pointer-events-none font-normal tracking-wide"
+              className="word-sphere-nav__tag word-sphere-nav__tag--secondary absolute whitespace-nowrap pointer-events-none tracking-wide"
               aria-hidden
               style={{
                 left: node.screenX,
@@ -266,10 +307,10 @@ export default function WordSphereNav({
                 opacity,
                 filter: blur > 0.1 ? `blur(${blur}px)` : "none",
                 zIndex: Math.round(node.z + SPHERE_RADIUS),
-                color: `color-mix(in srgb, ${node.color} 55%, #64748b)`,
-                textShadow: node.depth > 0.6 ? `0 0 6px ${node.color}22` : "none",
+                color: `color-mix(in srgb, ${node.color} 48%, #64748b)`,
+                textShadow: node.depth > 0.6 ? `0 0 5px ${node.color}18` : "none",
                 fontSize: secondarySize,
-                fontWeight: 400,
+                fontWeight: 300,
               }}
             >
               {node.label}
@@ -288,13 +329,11 @@ export default function WordSphereNav({
               transform: `translate(-50%, -50%) scale(${scale})`,
               opacity,
               filter: blur > 0.1 ? `blur(${blur}px)` : "none",
-              zIndex: isHovered ? 2000 : Math.round(node.z + SPHERE_RADIUS),
-              color: isHovered ? node.color : `color-mix(in srgb, ${node.color} 75%, #e2e8f0)`,
+              zIndex: isHovered ? 2000 : Math.round(node.z + SPHERE_RADIUS) + 40,
+              color: isHovered ? node.color : `color-mix(in srgb, ${node.color} 82%, #f8fafc)`,
               textShadow: isHovered
                 ? `0 0 16px ${node.color}, 0 0 32px ${node.color}88, 0 0 4px #fff`
-                : node.depth > 0.55
-                  ? `0 0 8px ${node.color}44`
-                  : "none",
+                : `0 0 10px ${node.color}55, 0 1px 2px rgba(0,0,0,0.55)`,
               fontSize: primarySize,
             }}
             onMouseEnter={() => handleWordEnter(node.index, node.kind)}
