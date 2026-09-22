@@ -1,5 +1,4 @@
 import WordSphereNav from "./WordSphereNav";
-import TypographySphereCanvas from "./TypographySphereCanvas";
 
 export default function GachaHeroLanding({ onNavigate, onEnter }) {
   return (
@@ -21,7 +20,6 @@ export default function GachaHeroLanding({ onNavigate, onEnter }) {
         <button type="button" onClick={onEnter} className="glass-enter-btn px-8 py-3">
           Enter Diorama
         </button>
-        <TypographySphereCanvas className="mt-6" />
       </footer>
     </div>
   );

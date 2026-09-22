@@ -528,6 +528,11 @@ body {
   letter-spacing: 0.06em;
 }
 
+.word-sphere-nav__tag--secondary {
+  cursor: default;
+  letter-spacing: 0.04em;
+}
+
 .word-sphere-nav__tag:focus-visible {
   outline: 2px solid rgba(0, 230, 184, 0.8);
   outline-offset: 4px;

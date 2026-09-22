@@ -21,6 +21,52 @@ export const WORD_SPHERE_ITEMS = [
   { label: "Mimic Insects", tabId: "mimic", color: "#a3e635" },
 ];
 
+/** Former lower typography-sphere lexicon — secondary labels in the top sphere. */
+export const WORD_SPHERE_SECONDARY = [
+  "Microcosm", "微觀世界", "Miniature", "微縮模型", "Topography", "地貌", "Ecosystem", "生態系統",
+  "Vignette", "情景模型", "Scale Model", "比例模型", "World-Building", "世界觀構建", "Depth of Field", "極致景深",
+  "Terrarium", "生態缸", "Isometric", "等距視角", "Cross-Section", "橫截面", "Habitat", "棲息地",
+  "Encapsulated", "封裝空間", "Blind Box", "盲盒", "Unlockable", "解鎖", "SSR", "極罕有",
+  "Super Rare", "RNG", "隨機機率", "Collection Vault", "收藏庫", "Loot Drop", "掉落戰利品",
+  "Silhouette", "剪影解鎖", "Serendipity", "不期而遇", "Glow Effect", "高光特效", "Addictive", "上癮",
+  "Sticker Book", "貼紙圖鑑", "Hidden Secret", "隱藏款", "Hyper-Detailed", "超高細節", "Microscopic", "顯微級",
+  "Intricate", "錯綜複雜", "Craftsmanship", "工匠精神", "Photorealistic", "極致寫實", "Texture", "物理材質",
+  "8K Resolution", "8K 超高清", "Granular", "顆粒感", "Precision", "精準度", "Meticulous", "一絲不苟",
+  "Raytracing", "光線追蹤", "Nuance", "細微差別", "More is More", "多即是多", "Organized Chaos", "有序的混亂",
+  "Sensory Overload", "感官超載", "Visual Tapestry", "視覺織錦", "Layered", "層次疊加", "Eclectic", "折衷主義",
+  "Vibrant", "色彩斑斕", "Kaleidoscope", "萬花筒", "Extravaganza", "狂想曲", "Abundance", "無盡豐盛",
+  "Juxtaposition", "碰撞並置", "Opulent", "奢華繁複", "Multiverse", "多重宇宙", "Spectrum", "無盡光譜",
+  "Cross-Cultural", "跨文化", "Myriad", "包羅萬象", "Fusion", "極致融合", "Global Heritage", "全球遺產",
+  "Flora & Fauna", "動植物相", "Coexistence", "萬物共存", "Boundless", "無邊界", "Omniverse", "全宇宙",
+  "Evolution", "生命演化", "Symbiosis", "共生",
+];
+
+const SECONDARY_PALETTE = [
+  "#94a3b8", "#7dd3fc", "#67e8f9", "#5eead4", "#a5b4fc", "#c4b5fd",
+  "#fcd34d", "#fda4af", "#86efac", "#67e8f9", "#a78bfa", "#cbd5e1",
+];
+
+function secondaryColor(label, index) {
+  const hash =
+    (index * 2654435761) ^
+    [...label].reduce((acc, ch) => acc + ch.charCodeAt(0) * 31, 0);
+  return SECONDARY_PALETTE[Math.abs(hash) % SECONDARY_PALETTE.length];
+}
+
+function buildSphereEntries(primaryItems, secondaryLabels) {
+  const primary = primaryItems.map((item) => ({
+    ...item,
+    kind: "primary",
+  }));
+  const secondary = secondaryLabels.map((label, i) => ({
+    label,
+    tabId: null,
+    color: secondaryColor(label, i),
+    kind: "secondary",
+  }));
+  return [...primary, ...secondary];
+}
+
 const SPHERE_RADIUS = 200;
 const PERSPECTIVE = 520;
 
@@ -60,7 +106,12 @@ function rotatePoint({ x, y, z }, rotX, rotY) {
   return { x: x1, y: y1, z: z1 };
 }
 
-export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, className = "" }) {
+export default function WordSphereNav({
+  items = WORD_SPHERE_ITEMS,
+  secondaryLabels = WORD_SPHERE_SECONDARY,
+  onNavigate,
+  className = "",
+}) {
   const containerRef = useRef(null);
   const rotationRef = useRef({ x: 0.25, y: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -69,9 +120,14 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [size, setSize] = useState({ w: 600, h: 500 });
 
+  const entries = useMemo(
+    () => buildSphereEntries(items, secondaryLabels),
+    [items, secondaryLabels]
+  );
+
   const basePoints = useMemo(
-    () => fibonacciSphere(items.length, SPHERE_RADIUS),
-    [items.length]
+    () => fibonacciSphere(entries.length, SPHERE_RADIUS),
+    [entries.length]
   );
 
   const resizeObserver = useCallback(() => {
@@ -119,11 +175,12 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
     const cx = size.w / 2;
     const cy = size.h / 2;
 
-    const nodes = items.map((item, i) => {
+    const nodes = entries.map((item, i) => {
       const rotated = rotatePoint(basePoints[i], rotX, rotY);
       const { x, y, z } = rotated;
       const depth = (z + SPHERE_RADIUS) / (2 * SPHERE_RADIUS);
       const perspectiveScale = PERSPECTIVE / (PERSPECTIVE + z);
+      const isSecondary = item.kind === "secondary";
 
       return {
         ...item,
@@ -134,15 +191,19 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
         depth,
         screenX: cx + x * perspectiveScale,
         screenY: cy + y * perspectiveScale,
-        opacity: 0.18 + depth * 0.82,
-        scale: 0.6 + depth * 0.72,
-        blur: (1 - depth) * 3.5,
+        opacity: isSecondary
+          ? 0.08 + depth * 0.42
+          : 0.22 + depth * 0.78,
+        scale: isSecondary
+          ? 0.42 + depth * 0.38
+          : 0.62 + depth * 0.72,
+        blur: (1 - depth) * (isSecondary ? 2.2 : 3.5),
       };
     });
 
     return nodes.sort((a, b) => a.z - b.z);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- frame drives rotation updates
-  }, [items, basePoints, size, frame]);
+  }, [entries, basePoints, size, frame]);
 
   const handleMouseMove = (e) => {
     const el = containerRef.current;
@@ -158,7 +219,8 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
     mouseRef.current = { x: 0, y: 0 };
   };
 
-  const handleWordEnter = (index) => {
+  const handleWordEnter = (index, kind) => {
+    if (kind === "secondary") return;
     hoveredRef.current = index;
     setHoveredIndex(index);
   };
@@ -183,14 +245,41 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
       aria-label="Archive navigation sphere"
     >
       {projected.map((node) => {
-        const isHovered = hoveredIndex === node.index;
+        const isSecondary = node.kind === "secondary";
+        const isHovered = !isSecondary && hoveredIndex === node.index;
         const opacity = isHovered ? 1 : node.opacity;
         const scale = isHovered ? Math.max(node.scale, 1.05) * 1.12 : node.scale;
         const blur = isHovered ? 0 : node.blur;
+        const primarySize = node.label.length > 14 ? "0.88rem" : "1.05rem";
+        const secondarySize = node.label.length > 10 ? "0.52rem" : "0.58rem";
+
+        if (isSecondary) {
+          return (
+            <span
+              key={`sec-${node.label}-${node.index}`}
+              className="word-sphere-nav__tag word-sphere-nav__tag--secondary absolute whitespace-nowrap pointer-events-none font-normal tracking-wide"
+              aria-hidden
+              style={{
+                left: node.screenX,
+                top: node.screenY,
+                transform: `translate(-50%, -50%) scale(${scale})`,
+                opacity,
+                filter: blur > 0.1 ? `blur(${blur}px)` : "none",
+                zIndex: Math.round(node.z + SPHERE_RADIUS),
+                color: `color-mix(in srgb, ${node.color} 55%, #64748b)`,
+                textShadow: node.depth > 0.6 ? `0 0 6px ${node.color}22` : "none",
+                fontSize: secondarySize,
+                fontWeight: 400,
+              }}
+            >
+              {node.label}
+            </span>
+          );
+        }
 
         return (
           <button
-            key={`${node.label}-${node.index}`}
+            key={`pri-${node.label}-${node.index}`}
             type="button"
             className="word-sphere-nav__tag absolute whitespace-nowrap border-none bg-transparent font-bold tracking-wide transition-[color,text-shadow] duration-200"
             style={{
@@ -206,9 +295,9 @@ export default function WordSphereNav({ items = WORD_SPHERE_ITEMS, onNavigate, c
                 : node.depth > 0.55
                   ? `0 0 8px ${node.color}44`
                   : "none",
-              fontSize: node.label.length > 14 ? "0.88rem" : "1.05rem",
+              fontSize: primarySize,
             }}
-            onMouseEnter={() => handleWordEnter(node.index)}
+            onMouseEnter={() => handleWordEnter(node.index, node.kind)}
             onMouseLeave={handleWordLeave}
             onClick={() => handleWordClick(node.tabId)}
           >
