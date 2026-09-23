@@ -9,7 +9,6 @@ import { UPGRADES, rollUpgradeChoices } from "./configs/upgrades.js";
 import { getSiegeBonusesFromHideout } from "../hideout/hideoutSim.js";
 import { LAST_RUN_KEY } from "../hideout/hideoutStorage.js";
 import {
-  angleDelta,
   getPlayerMuzzle,
   launchFromPointer,
   velocityFromLaunch,
@@ -162,10 +161,7 @@ export function createSiegeState() {
   };
   applyHideoutBonuses(state);
   // Recompute speed after hideout projSpeedMul
-  const again = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
-  state.aimAngle = again.angle;
-  state.aimSpeed = again.speed;
-  syncAimPoint(state);
+  snapAimFromPointer(state);
   return state;
 }
 
@@ -248,20 +244,14 @@ function damageEnemy(state, enemy, amount, fromRight = true) {
   }
 }
 
-function syncAimPoint(state) {
+function snapAimFromPointer(state) {
   const { x: mx, y: my } = getPlayerMuzzle();
-  const reach = 40 + state.aimSpeed * 0.22;
-  state.aimX = mx + Math.cos(state.aimAngle) * reach;
-  state.aimY = my + Math.sin(state.aimAngle) * reach;
-}
-
-function updateAimSmooth(state, dt) {
-  const { x: mx, y: my } = getPlayerMuzzle();
-  const target = launchFromPointer(mx, my, state.pointerX, state.pointerY, state.mods);
-  const k = 1 - Math.exp(-PLAYER_WEAPON.aimSmooth * dt);
-  state.aimAngle += angleDelta(state.aimAngle, target.angle) * k;
-  state.aimSpeed += (target.speed - state.aimSpeed) * k;
-  syncAimPoint(state);
+  const launch = launchFromPointer(mx, my, state.pointerX, state.pointerY, state.mods);
+  state.aimAngle = launch.angle;
+  state.aimSpeed = launch.speed;
+  // Aim reticule sticks to the mouse — not a smoothed offset along the launch vector.
+  state.aimX = state.pointerX;
+  state.aimY = state.pointerY;
 }
 
 function updateProjectiles(state, dt) {
@@ -384,12 +374,12 @@ function startNextWave(state) {
 export function tickSiege(state, dt) {
   const step = Math.min(dt, 0.05);
 
-  // Aim tracks the pointer even while paused so the arc stays live.
+  // Aim tracks the pointer 1:1 (no laggy exponential smooth on the reticule).
   if (
     state.phase === PHASE.combat ||
     state.phase === PHASE.paused
   ) {
-    updateAimSmooth(state, step);
+    snapAimFromPointer(state);
   }
 
   if (state.phase === PHASE.paused) return;
@@ -434,18 +424,23 @@ export function tickSiege(state, dt) {
 export function setAim(state, x, y) {
   state.pointerX = x;
   state.pointerY = y;
+  // Snap immediately on input so the reticule does not wait for the next tick.
+  if (state.phase === PHASE.combat || state.phase === PHASE.paused) {
+    snapAimFromPointer(state);
+  }
 }
 
-/** Current smoothed launch velocity (for preview / debug). */
+/** Current launch velocity matching the live aim preview. */
 export function getPlayerLaunch(state) {
   return velocityFromLaunch(state.aimAngle, state.aimSpeed);
 }
 
-/** Fire player ballista along smoothed ballistic aim if cooldown ready. */
+/** Fire player ballista along the current (cursor-locked) ballistic aim. */
 export function tryPlayerFire(state) {
   if (state.phase !== PHASE.combat) return false;
   if (state.playerCd > 0) return false;
 
+  snapAimFromPointer(state);
   const { x: muzzleX, y: muzzleY } = getPlayerMuzzle();
   const { vx, vy } = velocityFromLaunch(state.aimAngle, state.aimSpeed);
 
@@ -515,22 +510,11 @@ export function applyCapturePreset(state, preset) {
     state.enemies[3].x = 800;
     state.phase = PHASE.combat;
     setAim(state, 640, 140);
-    // Snap aim so capture shows a clear arc without waiting for smooth
-    const muzzle = getPlayerMuzzle();
-    const launch = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
-    state.aimAngle = launch.angle;
-    state.aimSpeed = launch.speed;
-    syncAimPoint(state);
     return;
   }
   if (preset === "arcAim") {
     applyCapturePreset(state, "wave");
     setAim(state, 700, 90);
-    const muzzle = getPlayerMuzzle();
-    const launch = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
-    state.aimAngle = launch.angle;
-    state.aimSpeed = launch.speed;
-    syncAimPoint(state);
     state.playerCd = 0;
     return;
   }
@@ -541,6 +525,12 @@ export function applyCapturePreset(state, preset) {
     for (let i = 0; i < 28; i++) {
       updateProjectiles(state, 1 / 60);
     }
+    return;
+  }
+  if (preset === "aimStick") {
+    applyCapturePreset(state, "wave");
+    setAim(state, 580, 160);
+    state.playerCd = 0;
     return;
   }
   if (preset === "upgrade") {

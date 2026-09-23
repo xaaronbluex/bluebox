@@ -16,8 +16,6 @@ export const PLAYER_WEAPON = {
   maxLaunchSpeed: 560,
   /** Pointer distance from muzzle that reaches maxLaunchSpeed. */
   aimDistanceRef: 300,
-  /** Aim angle/power smoothing rate (higher = snappier). */
-  aimSmooth: 16,
   /** Ballistic bolt lifetime before despawn. */
   boltLife: 3.2,
 };

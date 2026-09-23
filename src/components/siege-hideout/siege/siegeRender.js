@@ -104,6 +104,7 @@ function drawAim(ctx, state) {
   if (state.phase !== PHASE.combat && state.phase !== PHASE.paused) return;
 
   const { x: mx, y: my } = getPlayerMuzzle();
+  // Preview uses the same cursor-locked launch as fire (no lag vs pointer).
   const { vx, vy } = velocityFromLaunch(state.aimAngle, state.aimSpeed);
   const points = sampleBallisticArc(mx, my, vx, vy, PLAYER_WEAPON.gravity, {
     dt: 1 / 60,
@@ -132,9 +133,12 @@ function drawAim(ctx, state) {
   fillRgb(ctx, PALETTE.charcoal, mx - 14, my + 10, 28, 4);
   fillRgb(ctx, PALETTE.brass, mx - 13, my + 11, Math.max(2, Math.round(26 * powerT)), 2);
 
-  // Cursor ghost (smoothed aim tip, not raw pointer — less jitter)
-  fillRgb(ctx, PALETTE.brass, state.aimX - 2, state.aimY - 2, 4, 4);
-  fillRgb(ctx, PALETTE.paleAsh, state.aimX - 1, state.aimY - 1, 2, 2);
+  // Reticule glued to mouse pointer (aimX/Y === pointer).
+  const ax = Math.round(state.aimX);
+  const ay = Math.round(state.aimY);
+  fillRgb(ctx, PALETTE.brass, ax - 3, ay - 1, 6, 2);
+  fillRgb(ctx, PALETTE.brass, ax - 1, ay - 3, 2, 6);
+  fillRgb(ctx, PALETTE.paleAsh, ax - 1, ay - 1, 2, 2);
 }
 
 function drawTowerMarker(ctx) {
