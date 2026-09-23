@@ -340,8 +340,8 @@ export default function WordSphereNav({
       {entries.map((item, index) => {
         const isSecondary = item.kind === "secondary";
         const primarySize = item.label.length > 14 ? "1.05rem" : "1.28rem";
-        // Modest bump vs prior 0.40/0.46rem — still clearly below primary.
-        const secondarySize = item.label.length > 10 ? "0.52rem" : "0.60rem";
+        // Modest bump vs prior 0.52/0.60rem — still clearly below primary.
+        const secondarySize = item.label.length > 10 ? "0.62rem" : "0.72rem";
 
         if (isSecondary) {
           return (

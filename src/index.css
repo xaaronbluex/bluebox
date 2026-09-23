@@ -567,7 +567,7 @@ body {
   cursor: default;
   letter-spacing: 0.03em;
   font-weight: 300;
-  /* Secondary stays lighter/smaller than primary; size set inline (~0.52–0.60rem) */
+  /* Secondary stays lighter/smaller than primary; size set inline (~0.62–0.72rem) */
   pointer-events: none;
 }
 
