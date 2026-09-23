@@ -15,20 +15,20 @@ export const PLAYER_WEAPON = {
   minLaunchSpeed: 200,
   /** Soft ceiling — rises with distance so far flat shots don't snap into sky lobs. */
   maxLaunchSpeedNear: 560,
-  maxLaunchSpeedFar: 820,
+  maxLaunchSpeedFar: 980,
   maxLaunchSpeed: 640,
   /** Distance band for near(bell) → far(flat) morph (logical px from muzzle). */
   arcNearDist: 95,
   arcFarDist: 560,
   /** Travel speed used in t ≈ dist/speed — near slower (taller lob), far faster (flatter). */
-  arcSpeedNear: 210,
-  arcSpeedFar: 520,
+  arcSpeedNear: 200,
+  arcSpeedFar: 720,
   /** Extra flight-time mul — near stacks into a bell, far stays ~1 (shallow). */
-  arcLobNear: 1.7,
-  arcLobFar: 1.03,
-  arcMinFlightT: 0.2,
-  arcMaxFlightTNear: 1.15,
-  arcMaxFlightTFar: 1.95,
+  arcLobNear: 1.85,
+  arcLobFar: 1.0,
+  arcMinFlightT: 0.18,
+  arcMaxFlightTNear: 1.2,
+  arcMaxFlightTFar: 1.25,
   /** Preview sample count + apex clustering (near denser / apex-weighted). */
   arcDotsNear: 30,
   arcDotsFar: 16,

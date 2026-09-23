@@ -563,7 +563,7 @@ export function applyCapturePreset(state, preset) {
   if (preset === "arcFar") {
     applyCapturePreset(state, "wave");
     // Far field → shallow stretched arc
-    setAim(state, 820, 240);
+    setAim(state, 860, 255);
     state.playerCd = 0;
     return;
   }
