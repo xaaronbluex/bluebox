@@ -1,5 +1,6 @@
 /**
- * Canvas presentation for Siege Run — reads sim snapshot, draws overlays on theme BG.
+ * Canvas presentation for Siege Run — reads sim snapshot, draws on a plain playfield.
+ * Theme-ref parchment BG is intentionally unused here (logic polish first).
  */
 
 import { PALETTE } from "../shared/palette.js";
@@ -10,29 +11,28 @@ import { getEnemyDef } from "./configs/enemies.js";
 import { CASTLE, AUTO_TOWER, PLAYER_WEAPON } from "./configs/weapons.js";
 import { WAVE_COUNT } from "./configs/waves.js";
 import { PHASE } from "./siegeSim.js";
-import { THEME_BG_URL, preloadStyleTestBg } from "../style-test/styleTestRender.js";
 
 const W = LOGICAL_WIDTH;
 const H = LOGICAL_HEIGHT;
 
-export { THEME_BG_URL, preloadStyleTestBg };
+/** Flat playfield — no theme-ref image. Dark so units / HUD stay readable. */
+const PLAYFIELD_BG = PALETTE.charcoal;
 
 function fillRgb(ctx, hex, x, y, w, h) {
   ctx.fillStyle = hex;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
-function drawImageCover(ctx, img, dx, dy, dw, dh) {
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
-  if (!iw || !ih) return;
-  const scale = Math.max(dw / iw, dh / ih);
-  const sw = dw / scale;
-  const sh = dh / scale;
-  const sx = (iw - sw) * 0.5;
-  const sy = (ih - sh) * 0.5;
-  disableSmoothing(ctx);
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+/** Minimal keep silhouette so the left contact line is visible without theme art. */
+function drawCastle(ctx) {
+  const { x, y } = CASTLE.anchor;
+  fillRgb(ctx, PALETTE.navyDeep, x - 42, y - 70, 84, 90);
+  fillRgb(ctx, PALETTE.navy, x - 36, y - 62, 72, 78);
+  fillRgb(ctx, PALETTE.charcoalMid, x - 42, y - 78, 18, 16);
+  fillRgb(ctx, PALETTE.charcoalMid, x - 9, y - 84, 18, 22);
+  fillRgb(ctx, PALETTE.charcoalMid, x + 24, y - 78, 18, 16);
+  fillRgb(ctx, PALETTE.brass, x + 28, y - 40, 8, 28);
+  fillRgb(ctx, PALETTE.royalLit, x - 10, y - 28, 14, 22);
 }
 
 function drawHpBar(ctx, x, y, w, h, ratio, fill = PALETTE.redSignal) {
@@ -257,7 +257,6 @@ export function renderSiege({
   options = {},
 }) {
   const state = options.state;
-  const bg = options.bgImage;
   const halftone = options.halftone !== false;
   const dofGrain = options.dofGrain !== false;
 
@@ -266,13 +265,10 @@ export function renderSiege({
   disableSmoothing(scratchCtx);
 
   sceneCtx.clearRect(0, 0, W, H);
-  if (bg?.complete && (bg.naturalWidth || bg.width) > 0) {
-    drawImageCover(sceneCtx, bg, 0, 0, W, H);
-  } else {
-    fillRgb(sceneCtx, PALETTE.parchment, 0, 0, W, H);
-  }
+  fillRgb(sceneCtx, PLAYFIELD_BG, 0, 0, W, H);
 
   if (state) {
+    drawCastle(sceneCtx);
     drawTowerMarker(sceneCtx);
     for (const e of state.enemies) drawEnemy(sceneCtx, e);
     for (const p of state.projectiles) drawProjectile(sceneCtx, p);

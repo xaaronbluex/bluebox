@@ -19,11 +19,7 @@ import {
   applyCapturePreset,
   PHASE,
 } from "./siegeSim.js";
-import {
-  preloadStyleTestBg,
-  renderSiege,
-  hitTestUpgrade,
-} from "./siegeRender.js";
+import { renderSiege, hitTestUpgrade } from "./siegeRender.js";
 
 /**
  * Map pointer event to logical canvas coordinates.
@@ -43,9 +39,7 @@ function eventToLogical(canvas, clientX, clientY) {
  */
 export default function SiegeRun({ onExit } = {}) {
   const displayRef = useRef(null);
-  const bgRef = useRef(null);
   const stateRef = useRef(null);
-  const [bgReady, setBgReady] = useState(false);
   const [hud, setHud] = useState({
     phase: PHASE.combat,
     wave: 1,
@@ -65,24 +59,7 @@ export default function SiegeRun({ onExit } = {}) {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    preloadStyleTestBg()
-      .then((img) => {
-        if (cancelled) return;
-        bgRef.current = img;
-        setBgReady(true);
-      })
-      .catch((err) => {
-        console.error(err);
-        if (!cancelled) setBgReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!bgReady || !stateRef.current) return;
+    if (!stateRef.current) return;
     const display = displayRef.current;
     if (!display) return;
 
@@ -114,7 +91,6 @@ export default function SiegeRun({ onExit } = {}) {
         scratchCtx: scratch.ctx,
         options: {
           state,
-          bgImage: bgRef.current,
           halftone: true,
           dofGrain: true,
         },
@@ -138,7 +114,7 @@ export default function SiegeRun({ onExit } = {}) {
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [bgReady]);
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -237,7 +213,6 @@ export default function SiegeRun({ onExit } = {}) {
       <p className="siege-run__hint">
         Aim with mouse, click to fire. One auto watchtower. Esc pause · R restart. Between waves pick
         one of three upgrades.
-        {!bgReady ? " · loading BG…" : ""}
       </p>
     </div>
   );
