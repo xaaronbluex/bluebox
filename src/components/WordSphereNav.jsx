@@ -41,8 +41,8 @@ export const WORD_SPHERE_SECONDARY = [
   "Evolution", "生命演化", "Symbiosis", "共生",
 ];
 
-/** Dense fill for the circular silhouette (mockup-like), without drowning primary nav. */
-const SECONDARY_TARGET = 220;
+/** Dense fill for the circular silhouette — capped for 60fps DOM transforms. */
+const SECONDARY_TARGET = 140;
 
 const SECONDARY_PALETTE = [
   "#ffffff", "#f8fafc", "#ff8c33", "#fb923c", "#f59e0b", "#facc15", "#fbbf24",
@@ -136,6 +136,11 @@ function rotatePoint({ x, y, z }, rotX, rotY) {
   return { x: x1, y: y1, z: z1 };
 }
 
+function prefersReducedMotion() {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export default function WordSphereNav({
   items = WORD_SPHERE_ITEMS,
   secondaryLabels = WORD_SPHERE_SECONDARY,
@@ -143,10 +148,13 @@ export default function WordSphereNav({
   className = "",
 }) {
   const containerRef = useRef(null);
+  const discRef = useRef(null);
+  const nodeElsRef = useRef([]);
   const rotationRef = useRef({ x: 0.25, y: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
   const hoveredRef = useRef(null);
-  const [frame, setFrame] = useState(0);
+  const sizeRef = useRef({ w: 600, h: 500 });
+  const reducedMotionRef = useRef(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [size, setSize] = useState({ w: 600, h: 500 });
 
@@ -160,10 +168,16 @@ export default function WordSphereNav({
     [entries.length]
   );
 
+  const setNodeEl = useCallback((index, el) => {
+    nodeElsRef.current[index] = el;
+  }, []);
+
   const resizeObserver = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    setSize({ w: el.clientWidth, h: el.clientHeight });
+    const next = { w: el.clientWidth, h: el.clientHeight };
+    sizeRef.current = next;
+    setSize(next);
   }, []);
 
   useEffect(() => {
@@ -173,16 +187,43 @@ export default function WordSphereNav({
   }, [resizeObserver]);
 
   useEffect(() => {
+    reducedMotionRef.current = prefersReducedMotion();
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => {
+      reducedMotionRef.current = mq.matches;
+    };
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
+
+  // RAF loop: mutate transforms/opacity only — no React setState per frame.
+  useEffect(() => {
     let raf = 0;
     let last = performance.now();
+    const points = basePoints;
+    const list = entries;
 
     const tick = (now) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
+      const { w, h } = sizeRef.current;
+      const drawRadius = Math.min(w, h) * 0.46;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radiusScale = drawRadius / SPHERE_RADIUS;
+
+      const disc = discRef.current;
+      if (disc) {
+        const d = drawRadius * 2;
+        disc.style.width = `${d}px`;
+        disc.style.height = `${d}px`;
+      }
+
       const hovered = hoveredRef.current;
       const mouse = mouseRef.current;
-      const speedScale = hovered === null ? 1 : 0.15;
+      const reduced = reducedMotionRef.current;
+      const speedScale = reduced ? 0 : hovered === null ? 1 : 0.15;
 
       const autoY = 0.42 * speedScale;
       const autoX = 0.12 * speedScale;
@@ -192,51 +233,59 @@ export default function WordSphereNav({
       rotationRef.current.y += (autoY + mouseY) * dt;
       rotationRef.current.x += (autoX + mouseX) * dt;
 
-      setFrame((f) => (f + 1) % 100000);
+      const { x: rotX, y: rotY } = rotationRef.current;
+      const els = nodeElsRef.current;
+
+      for (let i = 0; i < list.length; i++) {
+        const el = els[i];
+        if (!el) continue;
+
+        const item = list[i];
+        const rotated = rotatePoint(points[i], rotX, rotY);
+        const { x, y, z } = rotated;
+        const depth = (z + SPHERE_RADIUS) / (2 * SPHERE_RADIUS);
+        const perspectiveScale = PERSPECTIVE / (PERSPECTIVE + z);
+        const isSecondary = item.kind === "secondary";
+        const isHovered = !isSecondary && hovered === i;
+
+        const opacity = isHovered
+          ? 1
+          : isSecondary
+            ? 0.14 + depth * 0.55
+            : 0.35 + depth * 0.65;
+        const scale = isHovered
+          ? Math.max(0.78 + depth * 0.55, 1.05) * 1.12
+          : isSecondary
+            ? 0.42 + depth * 0.34
+            : 0.78 + depth * 0.55;
+
+        const screenX = cx + x * radiusScale * perspectiveScale;
+        const screenY = cy + y * radiusScale * perspectiveScale;
+        const zIndex = isHovered
+          ? 2000
+          : Math.round(z + SPHERE_RADIUS) + (isSecondary ? 0 : 40);
+
+        el.style.transform = `translate3d(${screenX}px, ${screenY}px, 0) translate(-50%, -50%) scale(${scale})`;
+        el.style.opacity = String(opacity);
+        el.style.zIndex = String(zIndex);
+
+        if (!isSecondary) {
+          if (isHovered) {
+            el.style.color = item.color;
+            el.style.textShadow = `0 0 16px ${item.color}, 0 0 32px ${item.color}88, 0 0 4px #fff`;
+          } else {
+            el.style.color = `color-mix(in srgb, ${item.color} 82%, #f8fafc)`;
+            el.style.textShadow = `0 0 10px ${item.color}55, 0 1px 2px rgba(0,0,0,0.55)`;
+          }
+        }
+      }
+
       raf = requestAnimationFrame(tick);
     };
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const drawRadius = Math.min(size.w, size.h) * 0.46;
-
-  const projected = useMemo(() => {
-    const { x: rotX, y: rotY } = rotationRef.current;
-    const cx = size.w / 2;
-    const cy = size.h / 2;
-    const radiusScale = drawRadius / SPHERE_RADIUS;
-
-    const nodes = entries.map((item, i) => {
-      const rotated = rotatePoint(basePoints[i], rotX, rotY);
-      const { x, y, z } = rotated;
-      const depth = (z + SPHERE_RADIUS) / (2 * SPHERE_RADIUS);
-      const perspectiveScale = PERSPECTIVE / (PERSPECTIVE + z);
-      const isSecondary = item.kind === "secondary";
-
-      return {
-        ...item,
-        index: i,
-        x,
-        y,
-        z,
-        depth,
-        screenX: cx + x * radiusScale * perspectiveScale,
-        screenY: cy + y * radiusScale * perspectiveScale,
-        opacity: isSecondary
-          ? 0.12 + depth * 0.55
-          : 0.35 + depth * 0.65,
-        scale: isSecondary
-          ? 0.38 + depth * 0.32
-          : 0.78 + depth * 0.55,
-        blur: (1 - depth) * (isSecondary ? 1.6 : 2.8),
-      };
-    });
-
-    return nodes.sort((a, b) => a.z - b.z);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- frame drives rotation updates
-  }, [entries, basePoints, size, frame, drawRadius]);
+  }, [entries, basePoints]);
 
   const handleMouseMove = (e) => {
     const el = containerRef.current;
@@ -267,6 +316,8 @@ export default function WordSphereNav({
     if (tabId && onNavigate) onNavigate(tabId);
   };
 
+  const drawRadius = Math.min(size.w, size.h) * 0.46;
+
   return (
     <div
       ref={containerRef}
@@ -278,6 +329,7 @@ export default function WordSphereNav({
       aria-label="Archive navigation sphere"
     >
       <div
+        ref={discRef}
         className="word-sphere-nav__disc pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           width: drawRadius * 2,
@@ -285,62 +337,57 @@ export default function WordSphereNav({
         }}
         aria-hidden
       />
-      {projected.map((node) => {
-        const isSecondary = node.kind === "secondary";
-        const isHovered = !isSecondary && hoveredIndex === node.index;
-        const opacity = isHovered ? 1 : node.opacity;
-        const scale = isHovered ? Math.max(node.scale, 1.05) * 1.12 : node.scale;
-        const blur = isHovered ? 0 : node.blur;
-        const primarySize = node.label.length > 14 ? "1.05rem" : "1.28rem";
-        const secondarySize = node.label.length > 10 ? "0.4rem" : "0.46rem";
+      {entries.map((item, index) => {
+        const isSecondary = item.kind === "secondary";
+        const primarySize = item.label.length > 14 ? "1.05rem" : "1.28rem";
+        // Modest bump vs prior 0.40/0.46rem — still clearly below primary.
+        const secondarySize = item.label.length > 10 ? "0.52rem" : "0.60rem";
 
         if (isSecondary) {
           return (
             <span
-              key={`sec-${node.label}-${node.index}`}
+              key={`sec-${item.label}-${index}`}
+              ref={(el) => setNodeEl(index, el)}
               className="word-sphere-nav__tag word-sphere-nav__tag--secondary absolute whitespace-nowrap pointer-events-none tracking-wide"
               aria-hidden
               style={{
-                left: node.screenX,
-                top: node.screenY,
-                transform: `translate(-50%, -50%) scale(${scale})`,
-                opacity,
-                filter: blur > 0.1 ? `blur(${blur}px)` : "none",
-                zIndex: Math.round(node.z + SPHERE_RADIUS),
-                color: `color-mix(in srgb, ${node.color} 48%, #64748b)`,
-                textShadow: node.depth > 0.6 ? `0 0 5px ${node.color}18` : "none",
+                left: 0,
+                top: 0,
+                transform: "translate3d(-9999px, -9999px, 0)",
+                opacity: 0,
+                zIndex: 0,
+                color: `color-mix(in srgb, ${item.color} 48%, #64748b)`,
                 fontSize: secondarySize,
                 fontWeight: 300,
               }}
             >
-              {node.label}
+              {item.label}
             </span>
           );
         }
 
         return (
           <button
-            key={`pri-${node.label}-${node.index}`}
+            key={`pri-${item.label}-${index}`}
+            ref={(el) => setNodeEl(index, el)}
             type="button"
-            className="word-sphere-nav__tag absolute whitespace-nowrap border-none bg-transparent font-bold tracking-wide transition-[color,text-shadow] duration-200"
+            className="word-sphere-nav__tag absolute whitespace-nowrap border-none bg-transparent font-bold tracking-wide"
             style={{
-              left: node.screenX,
-              top: node.screenY,
-              transform: `translate(-50%, -50%) scale(${scale})`,
-              opacity,
-              filter: blur > 0.1 ? `blur(${blur}px)` : "none",
-              zIndex: isHovered ? 2000 : Math.round(node.z + SPHERE_RADIUS) + 40,
-              color: isHovered ? node.color : `color-mix(in srgb, ${node.color} 82%, #f8fafc)`,
-              textShadow: isHovered
-                ? `0 0 16px ${node.color}, 0 0 32px ${node.color}88, 0 0 4px #fff`
-                : `0 0 10px ${node.color}55, 0 1px 2px rgba(0,0,0,0.55)`,
+              left: 0,
+              top: 0,
+              transform: "translate3d(-9999px, -9999px, 0)",
+              opacity: 0,
+              zIndex: 40,
+              color: `color-mix(in srgb, ${item.color} 82%, #f8fafc)`,
+              textShadow: `0 0 10px ${item.color}55, 0 1px 2px rgba(0,0,0,0.55)`,
               fontSize: primarySize,
             }}
-            onMouseEnter={() => handleWordEnter(node.index, node.kind)}
+            aria-pressed={hoveredIndex === index}
+            onMouseEnter={() => handleWordEnter(index, item.kind)}
             onMouseLeave={handleWordLeave}
-            onClick={() => handleWordClick(node.tabId)}
+            onClick={() => handleWordClick(item.tabId)}
           >
-            {node.label}
+            {item.label}
           </button>
         );
       })}

@@ -538,6 +538,7 @@ body {
 .word-sphere-nav {
   perspective: 900px;
   touch-action: none;
+  contain: layout style;
 }
 
 .word-sphere-nav__disc {
@@ -556,17 +557,29 @@ body {
 .word-sphere-nav__tag {
   cursor: pointer;
   letter-spacing: 0.06em;
+  /* GPU layer: position via transform only (no left/top thrash, no filter:blur) */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .word-sphere-nav__tag--secondary {
   cursor: default;
   letter-spacing: 0.03em;
   font-weight: 300;
+  /* Secondary stays lighter/smaller than primary; size set inline (~0.52–0.60rem) */
+  pointer-events: none;
 }
 
 .word-sphere-nav__tag:focus-visible {
   outline: 2px solid rgba(0, 230, 184, 0.8);
   outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-sphere-nav__tag {
+    will-change: auto;
+  }
 }
 
 /* —— Gacha Hero: 3D floating glassmorphism —— */
