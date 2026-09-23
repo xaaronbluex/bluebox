@@ -302,6 +302,6 @@
 }
 
 .siege-canvas {
-  cursor: crosshair;
+  cursor: default;
   touch-action: none;
 }

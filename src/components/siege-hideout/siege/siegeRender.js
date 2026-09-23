@@ -121,7 +121,7 @@ function drawAim(ctx, state) {
     ctx.fillRect(Math.round(p.x - r), Math.round(p.y - r), r * 2, r * 2);
   }
 
-  // Power pip near muzzle
+  // Power pip near muzzle (no canvas reticule — OS cursor is the only pointer).
   const powerT = Math.max(
     0,
     Math.min(
@@ -132,13 +132,6 @@ function drawAim(ctx, state) {
   );
   fillRgb(ctx, PALETTE.charcoal, mx - 14, my + 10, 28, 4);
   fillRgb(ctx, PALETTE.brass, mx - 13, my + 11, Math.max(2, Math.round(26 * powerT)), 2);
-
-  // Reticule glued to mouse pointer (aimX/Y === pointer).
-  const ax = Math.round(state.aimX);
-  const ay = Math.round(state.aimY);
-  fillRgb(ctx, PALETTE.brass, ax - 3, ay - 1, 6, 2);
-  fillRgb(ctx, PALETTE.brass, ax - 1, ay - 3, 2, 6);
-  fillRgb(ctx, PALETTE.paleAsh, ax - 1, ay - 1, 2, 2);
 }
 
 function drawTowerMarker(ctx) {
