@@ -8,6 +8,12 @@ import { WAVE_COUNT, getWave } from "./configs/waves.js";
 import { UPGRADES, rollUpgradeChoices } from "./configs/upgrades.js";
 import { getSiegeBonusesFromHideout } from "../hideout/hideoutSim.js";
 import { LAST_RUN_KEY } from "../hideout/hideoutStorage.js";
+import {
+  angleDelta,
+  getPlayerMuzzle,
+  launchFromPointer,
+  velocityFromLaunch,
+} from "./ballistic.js";
 
 /** Combat lane Y band (matches style-test MAP_Y combat region). */
 export const LANE = {
@@ -119,6 +125,8 @@ function buildSpawnQueue(wave) {
 }
 
 export function createSiegeState() {
+  const muzzle = getPlayerMuzzle();
+  const initial = launchFromPointer(muzzle.x, muzzle.y, 520, 200, { projSpeedMul: 1 });
   const state = {
     phase: PHASE.combat,
     pauseResumePhase: PHASE.combat,
@@ -138,14 +146,26 @@ export function createSiegeState() {
     mods: defaultMods(),
     playerCd: 0,
     towerCd: 0,
-    aimX: 480,
-    aimY: 260,
+    /** Raw pointer in logical space (set by input; smoothed into aim*). */
+    pointerX: 520,
+    pointerY: 200,
+    /** Display/legacy aim point — follows smoothed launch direction. */
+    aimX: 520,
+    aimY: 200,
+    /** Smoothed ballistic aim (radians, canvas Y+). */
+    aimAngle: initial.angle,
+    aimSpeed: initial.speed,
     kills: 0,
     elapsed: 0,
     summary: null,
     hideoutBonus: null,
   };
   applyHideoutBonuses(state);
+  // Recompute speed after hideout projSpeedMul
+  const again = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
+  state.aimAngle = again.angle;
+  state.aimSpeed = again.speed;
+  syncAimPoint(state);
   return state;
 }
 
@@ -228,8 +248,28 @@ function damageEnemy(state, enemy, amount, fromRight = true) {
   }
 }
 
+function syncAimPoint(state) {
+  const { x: mx, y: my } = getPlayerMuzzle();
+  const reach = 40 + state.aimSpeed * 0.22;
+  state.aimX = mx + Math.cos(state.aimAngle) * reach;
+  state.aimY = my + Math.sin(state.aimAngle) * reach;
+}
+
+function updateAimSmooth(state, dt) {
+  const { x: mx, y: my } = getPlayerMuzzle();
+  const target = launchFromPointer(mx, my, state.pointerX, state.pointerY, state.mods);
+  const k = 1 - Math.exp(-PLAYER_WEAPON.aimSmooth * dt);
+  state.aimAngle += angleDelta(state.aimAngle, target.angle) * k;
+  state.aimSpeed += (target.speed - state.aimSpeed) * k;
+  syncAimPoint(state);
+}
+
 function updateProjectiles(state, dt) {
+  const g = PLAYER_WEAPON.gravity;
   for (const p of state.projectiles) {
+    if (p.ballistic) {
+      p.vy += g * dt;
+    }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     p.life -= dt;
@@ -254,7 +294,7 @@ function updateProjectiles(state, dt) {
     }
   }
   state.projectiles = state.projectiles.filter(
-    (p) => p.life > 0 && p.x > -20 && p.x < 980 && p.y > 0 && p.y < 400,
+    (p) => p.life > 0 && p.x > -20 && p.x < 980 && p.y > -40 && p.y < 420,
   );
 }
 
@@ -342,6 +382,16 @@ function startNextWave(state) {
  * @param {number} dt
  */
 export function tickSiege(state, dt) {
+  const step = Math.min(dt, 0.05);
+
+  // Aim tracks the pointer even while paused so the arc stays live.
+  if (
+    state.phase === PHASE.combat ||
+    state.phase === PHASE.paused
+  ) {
+    updateAimSmooth(state, step);
+  }
+
   if (state.phase === PHASE.paused) return;
   if (state.phase === PHASE.victory || state.phase === PHASE.defeat) return;
   if (state.phase === PHASE.betweenWaves) {
@@ -350,7 +400,6 @@ export function tickSiege(state, dt) {
     return;
   }
 
-  const step = Math.min(dt, 0.05);
   state.elapsed += step;
   state.waveTime += step;
   state.playerCd = Math.max(0, state.playerCd - step);
@@ -383,32 +432,34 @@ export function tickSiege(state, dt) {
 }
 
 export function setAim(state, x, y) {
-  state.aimX = x;
-  state.aimY = y;
+  state.pointerX = x;
+  state.pointerY = y;
 }
 
-/** Fire player ballista toward current aim if cooldown ready. */
+/** Current smoothed launch velocity (for preview / debug). */
+export function getPlayerLaunch(state) {
+  return velocityFromLaunch(state.aimAngle, state.aimSpeed);
+}
+
+/** Fire player ballista along smoothed ballistic aim if cooldown ready. */
 export function tryPlayerFire(state) {
   if (state.phase !== PHASE.combat) return false;
   if (state.playerCd > 0) return false;
 
-  const muzzleX = CASTLE.anchor.x + PLAYER_WEAPON.muzzleOffset.x;
-  const muzzleY = CASTLE.anchor.y + PLAYER_WEAPON.muzzleOffset.y;
-  const dx = state.aimX - muzzleX;
-  const dy = state.aimY - muzzleY;
-  const len = Math.hypot(dx, dy) || 1;
-  const speed = PLAYER_WEAPON.projectileSpeed * state.mods.projSpeedMul;
+  const { x: muzzleX, y: muzzleY } = getPlayerMuzzle();
+  const { vx, vy } = velocityFromLaunch(state.aimAngle, state.aimSpeed);
 
   state.projectiles.push({
     id: state.nextEntityId++,
     team: "player",
+    ballistic: true,
     x: muzzleX,
     y: muzzleY,
-    vx: (dx / len) * speed,
-    vy: (dy / len) * speed,
+    vx,
+    vy,
     damage: PLAYER_WEAPON.damage * state.mods.playerDamageMul,
     radius: PLAYER_WEAPON.projectileRadius,
-    life: 2.2,
+    life: PLAYER_WEAPON.boltLife,
   });
   state.playerCd = PLAYER_WEAPON.cooldown * state.mods.playerCooldownMul;
   return true;
@@ -463,6 +514,33 @@ export function applyCapturePreset(state, preset) {
     state.enemies[2].x = 700;
     state.enemies[3].x = 800;
     state.phase = PHASE.combat;
+    setAim(state, 640, 140);
+    // Snap aim so capture shows a clear arc without waiting for smooth
+    const muzzle = getPlayerMuzzle();
+    const launch = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
+    state.aimAngle = launch.angle;
+    state.aimSpeed = launch.speed;
+    syncAimPoint(state);
+    return;
+  }
+  if (preset === "arcAim") {
+    applyCapturePreset(state, "wave");
+    setAim(state, 700, 90);
+    const muzzle = getPlayerMuzzle();
+    const launch = launchFromPointer(muzzle.x, muzzle.y, state.pointerX, state.pointerY, state.mods);
+    state.aimAngle = launch.angle;
+    state.aimSpeed = launch.speed;
+    syncAimPoint(state);
+    state.playerCd = 0;
+    return;
+  }
+  if (preset === "arcShot") {
+    applyCapturePreset(state, "arcAim");
+    tryPlayerFire(state);
+    // Advance bolt along the arc for a mid-flight frame
+    for (let i = 0; i < 28; i++) {
+      updateProjectiles(state, 1 / 60);
+    }
     return;
   }
   if (preset === "upgrade") {

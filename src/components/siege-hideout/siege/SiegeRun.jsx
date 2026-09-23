@@ -211,8 +211,8 @@ export default function SiegeRun({ onExit } = {}) {
         />
       </div>
       <p className="siege-run__hint">
-        Aim with mouse, click to fire. One auto watchtower. Esc pause · R restart. Between waves pick
-        one of three upgrades.
+        Move mouse to aim (dotted arc = bolt path). Click to fire. One auto watchtower. Esc pause · R
+        restart. Between waves pick one of three upgrades.
       </p>
     </div>
   );

@@ -4,11 +4,22 @@ export const PLAYER_WEAPON = {
   id: "ballista",
   label: "Keep Ballista",
   damage: 12,
-  cooldown: 0.28,
+  cooldown: 0.32,
+  /** Legacy linear speed — ballistic shots use min/max launch instead. */
   projectileSpeed: 420,
-  projectileRadius: 3,
+  projectileRadius: 3.5,
   /** Spawn offset from castle anchor (logical px). */
   muzzleOffset: { x: 36, y: -18 },
+  /** Downward accel for player bolts (canvas Y+). Shared with arc preview. */
+  gravity: 780,
+  minLaunchSpeed: 220,
+  maxLaunchSpeed: 560,
+  /** Pointer distance from muzzle that reaches maxLaunchSpeed. */
+  aimDistanceRef: 300,
+  /** Aim angle/power smoothing rate (higher = snappier). */
+  aimSmooth: 16,
+  /** Ballistic bolt lifetime before despawn. */
+  boltLife: 3.2,
 };
 
 export const AUTO_TOWER = {
