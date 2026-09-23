@@ -157,6 +157,7 @@ export function createSiegeState() {
     aimVy: initial.vy,
     aimFlightT: initial.flightT,
     aimPowerT: initial.powerT,
+    aimDistNorm: initial.distNorm,
     kills: 0,
     elapsed: 0,
     summary: null,
@@ -256,6 +257,7 @@ function snapAimFromPointer(state) {
   state.aimVy = launch.vy;
   state.aimFlightT = launch.flightT;
   state.aimPowerT = launch.powerT;
+  state.aimDistNorm = launch.distNorm;
   // Keep aim point = real mouse (arc endpoint); no canvas reticule.
   state.aimX = state.pointerX;
   state.aimY = state.pointerY;
@@ -548,6 +550,20 @@ export function applyCapturePreset(state, preset) {
   if (preset === "aimStick") {
     applyCapturePreset(state, "wave");
     setAim(state, 580, 160);
+    state.playerCd = 0;
+    return;
+  }
+  if (preset === "arcNear") {
+    applyCapturePreset(state, "wave");
+    // Close to muzzle → dense bell lob
+    setAim(state, 250, 200);
+    state.playerCd = 0;
+    return;
+  }
+  if (preset === "arcFar") {
+    applyCapturePreset(state, "wave");
+    // Far field → shallow stretched arc
+    setAim(state, 820, 240);
     state.playerCd = 0;
     return;
   }

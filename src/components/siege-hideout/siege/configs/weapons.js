@@ -13,11 +13,27 @@ export const PLAYER_WEAPON = {
   /** Downward accel for player bolts (canvas Y+). Shared with arc preview. */
   gravity: 780,
   minLaunchSpeed: 200,
-  maxLaunchSpeed: 620,
-  /** Preferred average travel speed used to pick flight time to the cursor. */
-  arcPreferredSpeed: 340,
-  arcMinFlightT: 0.22,
-  arcMaxFlightT: 1.4,
+  /** Soft ceiling — rises with distance so far flat shots don't snap into sky lobs. */
+  maxLaunchSpeedNear: 560,
+  maxLaunchSpeedFar: 820,
+  maxLaunchSpeed: 640,
+  /** Distance band for near(bell) → far(flat) morph (logical px from muzzle). */
+  arcNearDist: 95,
+  arcFarDist: 560,
+  /** Travel speed used in t ≈ dist/speed — near slower (taller lob), far faster (flatter). */
+  arcSpeedNear: 210,
+  arcSpeedFar: 520,
+  /** Extra flight-time mul — near stacks into a bell, far stays ~1 (shallow). */
+  arcLobNear: 1.7,
+  arcLobFar: 1.03,
+  arcMinFlightT: 0.2,
+  arcMaxFlightTNear: 1.15,
+  arcMaxFlightTFar: 1.95,
+  /** Preview sample count + apex clustering (near denser / apex-weighted). */
+  arcDotsNear: 30,
+  arcDotsFar: 16,
+  arcApexBiasNear: 0.72,
+  arcApexBiasFar: 0.08,
   /** Ballistic bolt lifetime before despawn. */
   boltLife: 3.2,
 };

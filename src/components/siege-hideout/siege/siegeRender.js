@@ -103,7 +103,8 @@ function drawAim(ctx, state) {
   if (state.phase !== PHASE.combat && state.phase !== PHASE.paused) return;
 
   const { x: mx, y: my } = getPlayerMuzzle();
-  // Arc is solved to pass through the OS cursor — last dot sits on the mouse.
+  const distNorm = state.aimDistNorm ?? 0.5;
+  // Arc passes through OS cursor; sample density/apex bias morph with distance.
   const points = sampleArcThroughHit(
     mx,
     my,
@@ -111,14 +112,16 @@ function drawAim(ctx, state) {
     state.aimVy,
     PLAYER_WEAPON.gravity,
     state.aimFlightT,
-    { dots: 22 },
+    { distNorm },
   );
 
   for (let i = 1; i < points.length; i++) {
     const p = points[i];
     const fade = i / (points.length - 1);
     const r = i === points.length - 1 ? 2.5 : i % 2 === 0 ? 2 : 1.5;
-    ctx.fillStyle = `rgba(242,230,160,${0.3 + 0.5 * fade})`;
+    // Far arcs read a bit softer; near bells stay punchy.
+    const a = 0.28 + 0.52 * fade * (1 - 0.25 * distNorm);
+    ctx.fillStyle = `rgba(242,230,160,${a})`;
     ctx.fillRect(Math.round(p.x - r), Math.round(p.y - r), r * 2, r * 2);
   }
 
