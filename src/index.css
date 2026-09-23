@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Default UI scale: match the user's habitual Chrome page zoom (~175%).
+ * At browser zoom 100%, desktop should read like the previous 175% zoomed view.
+ * Detected via Chrome per-host zoom mode (175% most common) + live tab dpr=1.75
+ * on a 1× display (DELL U2724D). Localhost had no per-host override saved.
+ * Desktop only — leave phone layouts at native 100%.
+ */
+:root {
+  --site-ui-scale: 1.75;
+}
+
+@media (min-width: 768px) {
+  html {
+    zoom: var(--site-ui-scale);
+  }
+}
+
 /* Leaflet + Tailwind: preflight’s img max-width breaks tile positioning (blank map). */
 .leaflet-container img.leaflet-tile {
   max-width: none !important;
@@ -521,16 +538,48 @@ body {
 .word-sphere-nav {
   perspective: 900px;
   touch-action: none;
+  contain: layout style;
+}
+
+.word-sphere-nav__disc {
+  border: 1px solid rgba(34, 211, 238, 0.14);
+  box-shadow:
+    inset 0 0 48px rgba(0, 230, 184, 0.04),
+    0 0 60px rgba(56, 189, 248, 0.06);
+  background: radial-gradient(
+    circle at 50% 42%,
+    rgba(8, 24, 42, 0.35) 0%,
+    rgba(3, 8, 18, 0.12) 70%,
+    transparent 100%
+  );
 }
 
 .word-sphere-nav__tag {
   cursor: pointer;
   letter-spacing: 0.06em;
+  /* GPU layer: position via transform only (no left/top thrash, no filter:blur) */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.word-sphere-nav__tag--secondary {
+  cursor: default;
+  letter-spacing: 0.03em;
+  font-weight: 300;
+  /* Secondary stays lighter/smaller than primary; size set inline (~0.62–0.72rem) */
+  pointer-events: none;
 }
 
 .word-sphere-nav__tag:focus-visible {
   outline: 2px solid rgba(0, 230, 184, 0.8);
   outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-sphere-nav__tag {
+    will-change: auto;
+  }
 }
 
 /* —— Gacha Hero: 3D floating glassmorphism —— */
