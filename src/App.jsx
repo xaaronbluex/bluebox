@@ -624,10 +624,6 @@ export default function App() {
           setShowLanding(false);
           setTab(tabId);
         }}
-        onEnter={() => {
-          setShowLanding(false);
-          setTab("machines");
-        }}
       />
     );
   }

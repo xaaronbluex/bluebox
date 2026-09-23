@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Edit labels and tab targets here.
- * `tabId` must match an id in App.jsx `tabs` (or use onEnter for main archive).
+ * `tabId` must match an id in App.jsx `tabs`.
  */
 export const WORD_SPHERE_ITEMS = [
   { label: "Gacha", tabId: "machines", color: "#cbd5e1" },
