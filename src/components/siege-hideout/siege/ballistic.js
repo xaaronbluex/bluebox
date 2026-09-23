@@ -1,6 +1,9 @@
 /**
  * Shared ballistic helpers for Siege Run player shots (sim + render preview).
  * Canvas Y+ is downward — gravity is positive.
+ *
+ * Player aim solves a lob that **passes through the mouse** (exact analytical hit),
+ * so the dotted preview endpoint sticks to the OS cursor.
  */
 
 import { CASTLE, PLAYER_WEAPON } from "./configs/weapons.js";
@@ -16,38 +19,77 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-/** Shortest signed delta from a → b (radians). */
-export function angleDelta(a, b) {
-  let d = b - a;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return d;
+/** Closed-form ballistic pose at time t (matches preview + player bolts). */
+export function ballisticAt(x0, y0, vx0, vy0, gravity, t) {
+  return {
+    x: x0 + vx0 * t,
+    y: y0 + vy0 * t + 0.5 * gravity * t * t,
+    vx: vx0,
+    vy: vy0 + gravity * t,
+  };
 }
 
 /**
- * Map pointer (relative to muzzle) → launch angle + speed.
- * Power scales with distance from muzzle (Angry Birds–like strength feel).
+ * Solve launch so the parabola passes through the pointer.
+ * y = y0 + vy·t + ½g·t²  (Y+ down) → unique (vx, vy) for a chosen flight time.
  */
 export function launchFromPointer(muzzleX, muzzleY, pointerX, pointerY, mods = {}) {
-  const dx = pointerX - muzzleX;
-  const dy = pointerY - muzzleY;
-  const dist = Math.hypot(dx, dy);
-  // Always launch into the forward half-plane (castle sits on the left).
-  const aimDx = Math.max(dx, 28);
-  const maxUp = (-72 * Math.PI) / 180;
-  const maxDown = (55 * Math.PI) / 180;
-  const angle = Math.max(maxUp, Math.min(maxDown, Math.atan2(dy, aimDx)));
+  const g = PLAYER_WEAPON.gravity;
+  const speedMul = mods.projSpeedMul || 1;
 
-  const t = clamp(dist / PLAYER_WEAPON.aimDistanceRef, 0, 1);
-  // Ease-out so mid-range feels meaty
-  const eased = 1 - (1 - t) * (1 - t);
-  const base =
-    PLAYER_WEAPON.minLaunchSpeed +
-    eased * (PLAYER_WEAPON.maxLaunchSpeed - PLAYER_WEAPON.minLaunchSpeed);
-  const speed = base * (mods.projSpeedMul || 1);
-  return { angle, speed, powerT: eased };
+  // Keep a minimum forward reach so on/behind-muzzle aims stay solvable.
+  const hitX = Math.max(pointerX, muzzleX + 20);
+  const hitY = pointerY;
+  const dx = hitX - muzzleX;
+  const dy = hitY - muzzleY;
+  const dist = Math.hypot(dx, dy);
+
+  const preferred = PLAYER_WEAPON.arcPreferredSpeed * speedMul;
+  let t = clamp(dist / Math.max(1, preferred), PLAYER_WEAPON.arcMinFlightT, PLAYER_WEAPON.arcMaxFlightT);
+
+  let vx = dx / t;
+  let vy = (dy - 0.5 * g * t * t) / t;
+  let speed = Math.hypot(vx, vy);
+
+  // Stretch flight time if over max speed (still hits the same cursor point).
+  const maxSpeed = PLAYER_WEAPON.maxLaunchSpeed * speedMul;
+  if (speed > maxSpeed) {
+    let lo = t;
+    let hi = Math.max(t, PLAYER_WEAPON.arcMaxFlightT * 1.85);
+    for (let i = 0; i < 14; i++) {
+      const mid = (lo + hi) * 0.5;
+      const sx = dx / mid;
+      const sy = (dy - 0.5 * g * mid * mid) / mid;
+      if (Math.hypot(sx, sy) > maxSpeed) lo = mid;
+      else hi = mid;
+    }
+    t = hi;
+    vx = dx / t;
+    vy = (dy - 0.5 * g * t * t) / t;
+    speed = Math.hypot(vx, vy);
+  }
+
+  const angle = Math.atan2(vy, vx);
+  const powerT = clamp(
+    (speed / speedMul - PLAYER_WEAPON.minLaunchSpeed) /
+      Math.max(1, PLAYER_WEAPON.maxLaunchSpeed - PLAYER_WEAPON.minLaunchSpeed),
+    0,
+    1,
+  );
+
+  return {
+    angle,
+    speed,
+    vx,
+    vy,
+    flightT: t,
+    powerT,
+    hitX,
+    hitY,
+  };
 }
 
+/** @deprecated Prefer launch.vx/vy from launchFromPointer (cursor-hit lob). */
 export function velocityFromLaunch(angle, speed) {
   return {
     vx: Math.cos(angle) * speed,
@@ -56,8 +98,23 @@ export function velocityFromLaunch(angle, speed) {
 }
 
 /**
- * Integrate a ballistic path with the same Euler step as the sim.
+ * Analytical arc samples from muzzle through the hit point (last sample = cursor).
  * @returns {{ x: number, y: number }[]}
+ */
+export function sampleArcThroughHit(x0, y0, vx, vy, gravity, flightT, opts = {}) {
+  const dots = opts.dots ?? 22;
+  const points = [];
+  const tHit = Math.max(1e-4, flightT);
+  for (let i = 0; i <= dots; i++) {
+    const t = (tHit * i) / dots;
+    const p = ballisticAt(x0, y0, vx, vy, gravity, t);
+    points.push({ x: p.x, y: p.y });
+  }
+  return points;
+}
+
+/**
+ * Legacy Euler sampler (tower / debug). Prefer sampleArcThroughHit for player aim.
  */
 export function sampleBallisticArc(x0, y0, vx0, vy0, gravity, opts = {}) {
   const dt = opts.dt ?? 1 / 60;

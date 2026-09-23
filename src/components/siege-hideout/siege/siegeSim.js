@@ -9,9 +9,9 @@ import { UPGRADES, rollUpgradeChoices } from "./configs/upgrades.js";
 import { getSiegeBonusesFromHideout } from "../hideout/hideoutSim.js";
 import { LAST_RUN_KEY } from "../hideout/hideoutStorage.js";
 import {
+  ballisticAt,
   getPlayerMuzzle,
   launchFromPointer,
-  velocityFromLaunch,
 } from "./ballistic.js";
 
 /** Combat lane Y band (matches style-test MAP_Y combat region). */
@@ -145,15 +145,18 @@ export function createSiegeState() {
     mods: defaultMods(),
     playerCd: 0,
     towerCd: 0,
-    /** Raw pointer in logical space (set by input; smoothed into aim*). */
+    /** Raw pointer in logical space — arc is solved to pass through this. */
     pointerX: 520,
     pointerY: 200,
-    /** Display/legacy aim point — follows smoothed launch direction. */
     aimX: 520,
     aimY: 200,
-    /** Smoothed ballistic aim (radians, canvas Y+). */
+    /** Launch solved so parabola hits pointer (vx/vy/flightT drive preview + fire). */
     aimAngle: initial.angle,
     aimSpeed: initial.speed,
+    aimVx: initial.vx,
+    aimVy: initial.vy,
+    aimFlightT: initial.flightT,
+    aimPowerT: initial.powerT,
     kills: 0,
     elapsed: 0,
     summary: null,
@@ -249,7 +252,11 @@ function snapAimFromPointer(state) {
   const launch = launchFromPointer(mx, my, state.pointerX, state.pointerY, state.mods);
   state.aimAngle = launch.angle;
   state.aimSpeed = launch.speed;
-  // Aim reticule sticks to the mouse — not a smoothed offset along the launch vector.
+  state.aimVx = launch.vx;
+  state.aimVy = launch.vy;
+  state.aimFlightT = launch.flightT;
+  state.aimPowerT = launch.powerT;
+  // Keep aim point = real mouse (arc endpoint); no canvas reticule.
   state.aimX = state.pointerX;
   state.aimY = state.pointerY;
 }
@@ -258,10 +265,17 @@ function updateProjectiles(state, dt) {
   const g = PLAYER_WEAPON.gravity;
   for (const p of state.projectiles) {
     if (p.ballistic) {
-      p.vy += g * dt;
+      // Closed-form so flight matches the cursor-hit preview exactly.
+      p.age = (p.age || 0) + dt;
+      const pose = ballisticAt(p.x0, p.y0, p.vx0, p.vy0, g, p.age);
+      p.x = pose.x;
+      p.y = pose.y;
+      p.vx = pose.vx;
+      p.vy = pose.vy;
+    } else {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
     }
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
     p.life -= dt;
 
     if (p.team === "player") {
@@ -430,28 +444,32 @@ export function setAim(state, x, y) {
   }
 }
 
-/** Current launch velocity matching the live aim preview. */
+/** Current launch velocity matching the live cursor-hit arc. */
 export function getPlayerLaunch(state) {
-  return velocityFromLaunch(state.aimAngle, state.aimSpeed);
+  return { vx: state.aimVx, vy: state.aimVy };
 }
 
-/** Fire player ballista along the current (cursor-locked) ballistic aim. */
+/** Fire player ballista along the cursor-constrained ballistic lob. */
 export function tryPlayerFire(state) {
   if (state.phase !== PHASE.combat) return false;
   if (state.playerCd > 0) return false;
 
   snapAimFromPointer(state);
   const { x: muzzleX, y: muzzleY } = getPlayerMuzzle();
-  const { vx, vy } = velocityFromLaunch(state.aimAngle, state.aimSpeed);
 
   state.projectiles.push({
     id: state.nextEntityId++,
     team: "player",
     ballistic: true,
+    x0: muzzleX,
+    y0: muzzleY,
+    vx0: state.aimVx,
+    vy0: state.aimVy,
+    age: 0,
     x: muzzleX,
     y: muzzleY,
-    vx,
-    vy,
+    vx: state.aimVx,
+    vy: state.aimVy,
     damage: PLAYER_WEAPON.damage * state.mods.playerDamageMul,
     radius: PLAYER_WEAPON.projectileRadius,
     life: PLAYER_WEAPON.boltLife,

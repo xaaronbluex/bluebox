@@ -12,10 +12,12 @@ export const PLAYER_WEAPON = {
   muzzleOffset: { x: 36, y: -18 },
   /** Downward accel for player bolts (canvas Y+). Shared with arc preview. */
   gravity: 780,
-  minLaunchSpeed: 220,
-  maxLaunchSpeed: 560,
-  /** Pointer distance from muzzle that reaches maxLaunchSpeed. */
-  aimDistanceRef: 300,
+  minLaunchSpeed: 200,
+  maxLaunchSpeed: 620,
+  /** Preferred average travel speed used to pick flight time to the cursor. */
+  arcPreferredSpeed: 340,
+  arcMinFlightT: 0.22,
+  arcMaxFlightT: 1.4,
   /** Ballistic bolt lifetime before despawn. */
   boltLife: 3.2,
 };

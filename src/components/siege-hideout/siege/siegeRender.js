@@ -13,8 +13,7 @@ import { WAVE_COUNT } from "./configs/waves.js";
 import { PHASE } from "./siegeSim.js";
 import {
   getPlayerMuzzle,
-  sampleBallisticArc,
-  velocityFromLaunch,
+  sampleArcThroughHit,
 } from "./ballistic.js";
 
 const W = LOGICAL_WIDTH;
@@ -104,32 +103,27 @@ function drawAim(ctx, state) {
   if (state.phase !== PHASE.combat && state.phase !== PHASE.paused) return;
 
   const { x: mx, y: my } = getPlayerMuzzle();
-  // Preview uses the same cursor-locked launch as fire (no lag vs pointer).
-  const { vx, vy } = velocityFromLaunch(state.aimAngle, state.aimSpeed);
-  const points = sampleBallisticArc(mx, my, vx, vy, PLAYER_WEAPON.gravity, {
-    dt: 1 / 60,
-    maxSteps: 96,
-  });
+  // Arc is solved to pass through the OS cursor — last dot sits on the mouse.
+  const points = sampleArcThroughHit(
+    mx,
+    my,
+    state.aimVx,
+    state.aimVy,
+    PLAYER_WEAPON.gravity,
+    state.aimFlightT,
+    { dots: 22 },
+  );
 
-  // Dotted arc — sample every few integration steps so spacing tracks speed.
-  const stride = 3;
-  for (let i = stride; i < points.length; i += stride) {
+  for (let i = 1; i < points.length; i++) {
     const p = points[i];
-    const fade = 1 - i / points.length;
-    const r = i % (stride * 2) === 0 ? 2 : 1.5;
-    ctx.fillStyle = `rgba(242,230,160,${0.25 + 0.45 * fade})`;
+    const fade = i / (points.length - 1);
+    const r = i === points.length - 1 ? 2.5 : i % 2 === 0 ? 2 : 1.5;
+    ctx.fillStyle = `rgba(242,230,160,${0.3 + 0.5 * fade})`;
     ctx.fillRect(Math.round(p.x - r), Math.round(p.y - r), r * 2, r * 2);
   }
 
   // Power pip near muzzle (no canvas reticule — OS cursor is the only pointer).
-  const powerT = Math.max(
-    0,
-    Math.min(
-      1,
-      (state.aimSpeed / (state.mods?.projSpeedMul || 1) - PLAYER_WEAPON.minLaunchSpeed) /
-        Math.max(1, PLAYER_WEAPON.maxLaunchSpeed - PLAYER_WEAPON.minLaunchSpeed),
-    ),
-  );
+  const powerT = state.aimPowerT ?? 0.5;
   fillRgb(ctx, PALETTE.charcoal, mx - 14, my + 10, 28, 4);
   fillRgb(ctx, PALETTE.brass, mx - 13, my + 11, Math.max(2, Math.round(26 * powerT)), 2);
 }
