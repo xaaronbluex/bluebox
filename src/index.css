@@ -733,31 +733,6 @@ body {
     inset 0 0 16px rgba(0, 230, 184, 0.15);
 }
 
-.glass-enter-btn {
-  border-radius: 0.65rem;
-  padding: 0.85rem 1.25rem;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #030812;
-  background: linear-gradient(135deg, #00e6b8 0%, #38bdf8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow:
-    0 0 28px rgba(0, 230, 184, 0.45),
-    0 4px 16px rgba(0, 0, 0, 0.3);
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.glass-enter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 40px rgba(0, 230, 184, 0.65),
-    0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
 @media (max-width: 640px) {
   .glass-scene {
     perspective: 800px;
