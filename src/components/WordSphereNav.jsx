@@ -208,7 +208,7 @@ export default function WordSphereNav({
       last = now;
 
       const { w, h } = sizeRef.current;
-      const drawRadius = Math.min(w, h) * 0.52;
+      const drawRadius = Math.min(w, h) * 0.5;
       const cx = w / 2;
       const cy = h / 2;
       const radiusScale = drawRadius / SPHERE_RADIUS;
@@ -316,15 +316,16 @@ export default function WordSphereNav({
     if (tabId && onNavigate) onNavigate(tabId);
   };
 
-  const drawRadius = Math.min(size.w, size.h) * 0.52;
+  const drawRadius = Math.min(size.w, size.h) * 0.5;
 
   return (
     <div
       ref={containerRef}
       className={`word-sphere-nav relative mx-auto select-none ${className}`.trim()}
       style={{
-        width: "min(72vh, 70vw, 740px)",
-        height: "min(72vh, 70vw, 740px)",
+        // Fit under the title: leave ~15rem for hero header + padding, still larger than prior ~560px disc.
+        width: "min(calc(100vh - 15rem), 72vw, 700px)",
+        height: "min(calc(100vh - 15rem), 72vw, 700px)",
         maxWidth: "100%",
       }}
       onMouseMove={handleMouseMove}
