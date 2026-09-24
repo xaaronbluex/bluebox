@@ -208,7 +208,7 @@ export default function WordSphereNav({
       last = now;
 
       const { w, h } = sizeRef.current;
-      const drawRadius = Math.min(w, h) * 0.48;
+      const drawRadius = Math.min(w, h) * 0.5;
       const cx = w / 2;
       const cy = h / 2;
       const radiusScale = drawRadius / SPHERE_RADIUS;
@@ -316,16 +316,17 @@ export default function WordSphereNav({
     if (tabId && onNavigate) onNavigate(tabId);
   };
 
-  const drawRadius = Math.min(size.w, size.h) * 0.48;
+  const drawRadius = Math.min(size.w, size.h) * 0.5;
 
   return (
     <div
       ref={containerRef}
       className={`word-sphere-nav relative mx-auto select-none ${className}`.trim()}
       style={{
-        // Larger than prior ~560px disc; leave room under title + asymmetric padding nudge.
-        width: "min(calc(100vh - 14rem), 74vw, 700px)",
-        height: "min(calc(100vh - 14rem), 74vw, 700px)",
+        // Fairly large, but short enough to live in the mid-gap under the title
+        // (not filling the 1fr row / hugging the viewport bottom).
+        width: "min(58vh, 68vw, 640px)",
+        height: "min(58vh, 68vw, 640px)",
         maxWidth: "100%",
       }}
       onMouseMove={handleMouseMove}

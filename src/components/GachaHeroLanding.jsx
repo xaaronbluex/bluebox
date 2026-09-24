@@ -14,7 +14,8 @@ export default function GachaHeroLanding({ onNavigate }) {
         </h1>
       </header>
 
-      <div className="relative z-10 flex min-h-0 items-center justify-center overflow-hidden px-3 pb-6 pt-8 sm:pt-10">
+      {/* Sit sphere in the gap under the title — not flex-centered toward the fold */}
+      <div className="relative z-10 flex min-h-0 items-start justify-center overflow-hidden px-3 pt-3 pb-8 sm:pt-4">
         <WordSphereNav onNavigate={onNavigate} />
       </div>
     </div>
