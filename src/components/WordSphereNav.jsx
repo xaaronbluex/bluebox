@@ -208,7 +208,7 @@ export default function WordSphereNav({
       last = now;
 
       const { w, h } = sizeRef.current;
-      const drawRadius = Math.min(w, h) * 0.46;
+      const drawRadius = Math.min(w, h) * 0.54;
       const cx = w / 2;
       const cy = h / 2;
       const radiusScale = drawRadius / SPHERE_RADIUS;
@@ -316,13 +316,13 @@ export default function WordSphereNav({
     if (tabId && onNavigate) onNavigate(tabId);
   };
 
-  const drawRadius = Math.min(size.w, size.h) * 0.46;
+  const drawRadius = Math.min(size.w, size.h) * 0.54;
 
   return (
     <div
       ref={containerRef}
       className={`word-sphere-nav relative mx-auto w-full select-none ${className}`.trim()}
-      style={{ height: "min(68vh, 620px)", maxWidth: "56rem" }}
+      style={{ height: "min(82vh, 820px)", maxWidth: "min(94vw, 72rem)" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       role="navigation"
@@ -339,9 +339,9 @@ export default function WordSphereNav({
       />
       {entries.map((item, index) => {
         const isSecondary = item.kind === "secondary";
-        const primarySize = item.label.length > 14 ? "1.05rem" : "1.28rem";
-        // Modest bump vs prior 0.52/0.60rem — still clearly below primary.
-        const secondarySize = item.label.length > 10 ? "0.62rem" : "0.72rem";
+        const primarySize = item.label.length > 14 ? "1.18rem" : "1.42rem";
+        // Modest bump vs prior sizes — still clearly below primary.
+        const secondarySize = item.label.length > 10 ? "0.68rem" : "0.8rem";
 
         if (isSecondary) {
           return (

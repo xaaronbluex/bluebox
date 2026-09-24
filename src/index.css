@@ -536,7 +536,7 @@ body {
 
 /* —— Word sphere nav (home) —— */
 .word-sphere-nav {
-  perspective: 900px;
+  perspective: 1100px;
   touch-action: none;
   contain: layout style;
 }
