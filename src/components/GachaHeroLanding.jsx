@@ -14,9 +14,11 @@ export default function GachaHeroLanding({ onNavigate }) {
         </h1>
       </header>
 
-      {/* Sphere in the mid-gap under the title — not bottom-heavy, not glued to the h1 */}
-      <div className="relative z-10 flex min-h-0 items-start justify-center overflow-hidden px-3 pb-8 pt-[min(6vh,3.5rem)]">
-        <WordSphereNav onNavigate={onNavigate} />
+      {/* Anchor sphere center in the blank under the title (~52% of this row) */}
+      <div className="relative z-10 min-h-0 overflow-hidden">
+        <div className="absolute left-1/2 top-[48%] w-full -translate-x-1/2 -translate-y-1/2 px-3">
+          <WordSphereNav onNavigate={onNavigate} />
+        </div>
       </div>
     </div>
   );
