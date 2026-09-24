@@ -8,7 +8,6 @@ import EarthMoonThree from "./components/EarthMoonThree";
 import SunThree from "./components/SunThree";
 import PlanetSoloThree from "./components/PlanetSoloThree";
 import EarthGlobeMap from "./components/EarthGlobeMap";
-import MapsSection from "./components/MapsSection";
 import TowerDefenseGame from "./components/TowerDefenseGame";
 import GachaHeroLanding from "./components/GachaHeroLanding";
 import CrystalGlobeButton from "./components/CrystalGlobeButton";
@@ -89,7 +88,6 @@ const tabs = [
   { id: "mimic", label: "Mimic Insects", theme: "lime" },
   { id: "stamps", label: "Stamps", theme: "violet" },
   { id: "hk", label: "HK 3D Buildings", theme: "cyan" },
-  { id: "maps", label: "Maps", theme: "teal" },
   { id: "tower-defense", label: "Siege Run", theme: "orange" },
   { id: "hero", label: "AI Arts", theme: "fuchsia" },
   { id: "items", label: "Random Items", theme: "sky" },
@@ -105,7 +103,6 @@ const machineSlots = [
   { id: "stamps", title: "Stamps", image: "/static/img/machine/ocean_01.png" },
   { id: "heart", title: "心經", image: "/static/img/machine/heart_01.png" },
   { id: "hk", title: "Hong Kong 3D", image: "/static/img/machine/hk_01.png" },
-  { id: "maps", title: "Maps", image: "/static/img/machine/maps_01.png" },
 ];
 
 /**
@@ -1171,8 +1168,6 @@ export default function App() {
           </section>
         )}
 
-        {tab === "maps" && <MapsSection />}
-
         {tab === "hk" && (
           <section className="rounded-xl border border-cyan-800/50 bg-panel p-4">
             <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4">
@@ -1189,7 +1184,7 @@ export default function App() {
         )}
 
         {tabs
-          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense", "plants", "maps", "mimic", "stamps", "hk"].includes(t.id))
+          .filter((t) => !["machines", "colour", "chemical", "planets", "heart", "items", "hero", "tower-defense", "plants", "mimic", "stamps", "hk"].includes(t.id))
           .map((t) =>
             tab === t.id ? (
               <section key={t.id} className="rounded-xl border border-emerald-800/60 bg-panel p-6 text-center">
