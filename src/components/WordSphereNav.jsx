@@ -14,7 +14,6 @@ export const WORD_SPHERE_ITEMS = [
   { label: "Planets", tabId: "planets", color: "#818cf8" },
   { label: "心經", tabId: "heart", color: "#facc15" },
   { label: "Stamps", tabId: "stamps", color: "#a78bfa" },
-  { label: "Maps", tabId: "maps", color: "#2dd4bf" },
   { label: "AI Arts", tabId: "hero", color: "#e879f9" },
   { label: "HK Towers", tabId: "hk", color: "#22d3ee" },
   { label: "Siege Run", tabId: "tower-defense", color: "#fb923c" },

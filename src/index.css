@@ -19,17 +19,6 @@
   }
 }
 
-/* Leaflet + Tailwind: preflight’s img max-width breaks tile positioning (blank map). */
-.leaflet-container img.leaflet-tile {
-  max-width: none !important;
-  height: auto !important;
-}
-
-.leaflet-container .leaflet-marker-icon,
-.leaflet-container .leaflet-marker-shadow {
-  max-width: none !important;
-}
-
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", sans-serif;
