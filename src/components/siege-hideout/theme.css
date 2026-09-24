@@ -1,0 +1,307 @@
+/* Siege Run / Hideout — scoped theme (do not restyle global archive chrome). */
+
+.siege-hideout {
+  --siege-pale: #d8d6ce;
+  --siege-parchment: #e8deb5;
+  --siege-parchment-deep: #c9b889;
+  --siege-mid: #8d8d87;
+  --siege-charcoal: #1d2020;
+  --siege-charcoal-mid: #4a4b49;
+  --siege-red: #b7332e;
+  --siege-red-dark: #6f2525;
+  --siege-brass: #c69a43;
+  --siege-player: #6b7a86;
+  --siege-navy: #2a3a52;
+  --siege-stone: #a8adb3;
+  --siege-stone-blue: #7a8694;
+  --siege-earth: #6b5344;
+  --siege-grass: #5a6b4a;
+  --siege-fire: #e09a3a;
+  --siege-canvas-scale: 1;
+
+  color: var(--siege-pale);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(232, 222, 181, 0.08), transparent 55%),
+    linear-gradient(160deg, #121414 0%, #1a1c1b 45%, #0e1010 100%);
+  border: 1px solid rgba(141, 141, 135, 0.35);
+  border-radius: 4px;
+  padding: 0.75rem 1rem 1rem;
+  font-family: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+}
+
+.siege-hideout__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.siege-hideout__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: var(--siege-parchment);
+  font-weight: 600;
+}
+
+.siege-hideout__subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.siege-hideout__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.siege-hideout__mode {
+  appearance: none;
+  border: 1px solid var(--siege-charcoal-mid);
+  background: transparent;
+  color: var(--siege-mid);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  padding: 0.35rem 0.65rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.siege-hideout__mode:hover:not(:disabled) {
+  color: var(--siege-pale);
+  border-color: var(--siege-mid);
+}
+
+.siege-hideout__mode.is-active {
+  color: var(--siege-charcoal);
+  background: var(--siege-parchment);
+  border-color: var(--siege-brass);
+}
+
+.siege-hideout__mode:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.siege-hideout__stub {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border: 1px dashed var(--siege-charcoal-mid);
+  color: var(--siege-mid);
+  font-size: 0.85rem;
+}
+
+/* —— Hideout settlement shell —— */
+
+.hideout__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.hideout__stat {
+  color: var(--siege-pale);
+  letter-spacing: 0.02em;
+}
+
+.hideout__stat--marks {
+  color: var(--siege-brass);
+}
+
+.hideout__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.hideout__btn {
+  appearance: none;
+  border: 1px solid var(--siege-charcoal-mid);
+  background: transparent;
+  color: var(--siege-pale);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.hideout__btn:hover:not(:disabled) {
+  border-color: var(--siege-brass);
+  color: var(--siege-parchment);
+}
+
+.hideout__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hideout__canvas {
+  cursor: pointer;
+}
+
+.hideout__panel {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(141, 141, 135, 0.28);
+  background: rgba(29, 32, 32, 0.45);
+  font-size: 0.78rem;
+  color: var(--siege-pale);
+  min-height: 3.2rem;
+}
+
+.hideout__panel p {
+  margin: 0.35rem 0 0;
+}
+
+.hideout__panel em {
+  font-style: normal;
+  color: var(--siege-brass);
+}
+
+.hideout__muted {
+  color: var(--siege-mid);
+}
+
+.hideout__flash {
+  margin: 0.4rem 0 0 !important;
+  color: var(--siege-parchment) !important;
+}
+
+.hideout__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: var(--siege-mid);
+}
+
+.siege-style-test__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.siege-style-test__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  color: var(--siege-pale);
+}
+
+.siege-style-test__toggle kbd {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--siege-charcoal-mid);
+  border-radius: 2px;
+  color: var(--siege-brass);
+}
+
+.siege-style-test__meta {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.siege-canvas-shell {
+  display: flex;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 6px,
+      rgba(29, 32, 32, 0.35) 6px,
+      rgba(29, 32, 32, 0.35) 7px
+    ),
+    var(--siege-charcoal);
+  padding: 0.75rem;
+  border: 1px solid var(--siege-charcoal-mid);
+}
+
+.siege-canvas {
+  display: block;
+  /* v4: native 960×540 present; CSS may shrink on narrow viewports */
+  width: min(100%, calc(960px * var(--siege-canvas-scale)));
+  aspect-ratio: 960 / 540;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: var(--siege-pale);
+}
+
+.siege-style-test__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: var(--siege-mid);
+}
+
+/* —— Siege Run combat shell —— */
+
+.siege-run__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--siege-mid);
+}
+
+.siege-run__stat {
+  color: var(--siege-pale);
+  letter-spacing: 0.02em;
+}
+
+.siege-run__phase {
+  color: var(--siege-brass);
+  text-transform: lowercase;
+}
+
+.siege-run__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.siege-run__btn {
+  appearance: none;
+  border: 1px solid var(--siege-charcoal-mid);
+  background: transparent;
+  color: var(--siege-pale);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.siege-run__btn:hover {
+  border-color: var(--siege-brass);
+  color: var(--siege-parchment);
+}
+
+.siege-run__hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: var(--siege-mid);
+}
+
+.siege-canvas {
+  cursor: default;
+  touch-action: none;
+}
