@@ -14,7 +14,7 @@ export default function GachaHeroLanding({ onNavigate }) {
         </h1>
       </header>
 
-      <div className="relative z-10 flex min-h-0 items-center justify-center overflow-hidden px-3 pb-4 pt-10 sm:pt-12">
+      <div className="relative z-10 flex min-h-0 items-center justify-center overflow-hidden px-3 pb-6 pt-8 sm:pt-10">
         <WordSphereNav onNavigate={onNavigate} />
       </div>
     </div>
